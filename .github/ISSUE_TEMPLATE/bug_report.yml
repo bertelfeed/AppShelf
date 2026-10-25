@@ -1,0 +1,28 @@
+name: Bug report
+description: Report a reproducible problem in AppShelf.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: AppShelf and Windows version
+      placeholder: AppShelf 0.6.0, Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include whether the folder opens from the desktop or taskbar.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or logs
+      description: Remove personal file names, paths, and private information before sharing.

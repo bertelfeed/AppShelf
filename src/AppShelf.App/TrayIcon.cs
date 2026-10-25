@@ -18,7 +18,7 @@ public sealed class TrayIcon : IDisposable
         source.AddHook(HandleMessage);
         taskbarCreated = RegisterWindowMessage("TaskbarCreated");
         var icon = LoadImage(IntPtr.Zero, Path.Combine(AppContext.BaseDirectory, "Assets", "AppShelf.ico"), 1, 32, 32, 0x10);
-        data = new NotifyData { Size = (uint)Marshal.SizeOf<NotifyData>(), Window = source.Handle, Id = 1, Flags = 7, Callback = 0x8001, Icon = icon, Tip = "AppShelf — папки приложений" };
+        data = new NotifyData { Size = (uint)Marshal.SizeOf<NotifyData>(), Window = source.Handle, Id = 1, Flags = 7, Callback = 0x8001, Icon = icon, Tip = L.Get("AppShelfAppFolders") };
         Shell_NotifyIcon(0, ref data);
     }
     private IntPtr HandleMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -37,6 +37,11 @@ public sealed class TrayIcon : IDisposable
             handled = true;
         }
         return IntPtr.Zero;
+    }
+    public void RefreshLanguage()
+    {
+        data.Tip = L.Get("AppShelfAppFolders");
+        Shell_NotifyIcon(1, ref data);
     }
     public void Dispose() { Shell_NotifyIcon(2, ref data); if (data.Icon != IntPtr.Zero) DestroyIcon(data.Icon); source.Dispose(); }
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] private struct NotifyData

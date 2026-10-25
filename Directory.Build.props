@@ -3,5 +3,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Deterministic>true</Deterministic>
+    <Version>0.6.0</Version>
+    <Authors>bertelfeed</Authors>
+    <Copyright>Copyright (c) 2026 bertelfeed</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/bertelfeed/AppShelf</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 </Project>

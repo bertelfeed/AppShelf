@@ -7,7 +7,8 @@ public sealed class ConfigurationStore(string directory)
     public string DirectoryPath { get; } = Path.GetFullPath(directory);
     public string FilePath => Path.Combine(DirectoryPath, "shelf.json");
     public string BackupPath => FilePath + ".bak";
-    public string? RecoveryMessage { get; private set; }
+    private bool recoveryNotice;
+    public string? RecoveryMessage => recoveryNotice ? L.Get("SettingsRecovered") : null;
     private bool recoveredFromBackup;
     public static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, MaxDepth = 128 };
 
@@ -17,11 +18,11 @@ public sealed class ConfigurationStore(string directory)
         try { return Read(FilePath); }
         catch (Exception ex) when (ex is IOException or JsonException or InvalidDataException or UnauthorizedAccessException)
         {
-            if (!File.Exists(BackupPath)) throw new InvalidDataException("Настройки повреждены. Исходный файл сохранён: " + FilePath, ex);
+            if (!File.Exists(BackupPath)) throw new InvalidDataException(L.Get("SettingsAreDamagedTheOriginalFileWasPreserved") + FilePath, ex);
             var recovered = Read(BackupPath);
             // Preserve the damaged primary before the next successful save replaces it.
             File.Copy(FilePath, Path.Combine(DirectoryPath, $"shelf.corrupt-{DateTime.Now:yyyyMMdd-HHmmssfff}.json"));
-            RecoveryMessage = "Настройки восстановлены из резервной копии. Повреждённый файл сохранён рядом.";
+            recoveryNotice = true;
             recoveredFromBackup = true;
             return recovered;
         }
@@ -29,9 +30,9 @@ public sealed class ConfigurationStore(string directory)
 
     public static ShelfConfiguration Read(string path)
     {
-        if (new FileInfo(path).Length > 16 * 1024 * 1024) throw new InvalidDataException("Файл превышает 16 МБ.");
+        if (new FileInfo(path).Length > 16 * 1024 * 1024) throw new InvalidDataException(L.Get("TheFileExceeds16MB"));
         var config = JsonSerializer.Deserialize<ShelfConfiguration>(File.ReadAllText(path), JsonOptions)
-            ?? throw new InvalidDataException("Пустой файл настроек.");
+            ?? throw new InvalidDataException(L.Get("TheSettingsFileIsEmpty"));
         Migrate(config);
         ShelfTree.Validate(config);
         return config;
@@ -42,13 +43,13 @@ public sealed class ConfigurationStore(string directory)
         if (config.SchemaVersion != 1) return;
         // Validate before walking user-provided trees.
         config.SchemaVersion = 2;
-        if (config.Items is null) throw new InvalidDataException("Некорректный список папок.");
+        if (config.Items is null) throw new InvalidDataException(L.Get("InvalidFolderList"));
         void Convert(IEnumerable<ShelfItem> items, int depth)
         {
-            if (depth > 32) throw new InvalidDataException("Превышена глубина вложенности.");
+            if (depth > 32) throw new InvalidDataException(L.Get("TheNestingLimitWasExceeded"));
             foreach (var item in items)
             {
-                if (item is null || item.Children is null) throw new InvalidDataException("Некорректный элемент.");
+                if (item is null || item.Children is null) throw new InvalidDataException(L.Get("InvalidItem"));
                 item.Settings = new FolderSettings
                 {
                     Appearance = config.Appearance,

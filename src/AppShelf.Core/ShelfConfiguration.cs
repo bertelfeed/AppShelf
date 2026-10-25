@@ -11,7 +11,7 @@ public sealed class ShelfConfiguration
 {
     public int SchemaVersion { get; set; } = 2;
     public Appearance Appearance { get; set; }
-    public string Language { get; set; } = "ru-RU";
+    public string Language { get; set; } = Localization.DefaultLanguage;
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? Columns { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? CloseAfterLaunch { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? ShowLabels { get; set; }
@@ -22,7 +22,7 @@ public sealed class ShelfItem
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public ItemKind Kind { get; set; }
-    public string Name { get; set; } = "Новая папка";
+    public string Name { get; set; } = L.Get("NewFolder");
     public string Target { get; set; } = "";
     public string Arguments { get; set; } = "";
     public string WorkingDirectory { get; set; } = "";
@@ -55,6 +55,8 @@ public sealed class FolderSettings
     public FolderFace Face { get; set; }
     /// <summary>Plate colour as #RRGGBB; empty keeps the translucent Windows 11 plate.</summary>
     public string FaceColor { get; set; } = "";
+    /// <summary>Opacity of the icon plate in percent, so a coloured plate stays see-through like the standard one.</summary>
+    public int FaceOpacity { get; set; } = 40;
     public string FaceSymbol { get; set; } = "";
     /// <summary>Copy of the chosen picture inside the profile folder, so moving the original does not break the icon.</summary>
     public string FaceImage { get; set; } = "";

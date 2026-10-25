@@ -1,0 +1,793 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="MissingApplicationHelp">
+    <value>«{0}» не найдено: {1}
+Программу удалили или переместили. Укажите её в AppShelf: правый щелчок → «Свойства…».</value>
+  </data>
+  <data xml:space="preserve" name="AFolderCannotBeMovedIntoItselfOrOneOfItsSubfolders">
+    <value>Нельзя переместить папку в саму себя или в её вложенную папку.</value>
+  </data>
+  <data xml:space="preserve" name="AI">
+    <value>ИИ</value>
+  </data>
+  <data xml:space="preserve" name="Add">
+    <value>Добавить</value>
+  </data>
+  <data xml:space="preserve" name="Add0">
+    <value>Добавить ({0})</value>
+  </data>
+  <data xml:space="preserve" name="AddAnAppOrFolder">
+    <value>Добавить приложение или папку</value>
+  </data>
+  <data xml:space="preserve" name="AddApps">
+    <value>Добавить приложения</value>
+  </data>
+  <data xml:space="preserve" name="AddAppsOrDropShortcutsHereToKeepThemCloseAtHand">
+    <value>Добавьте приложения или перетащите сюда ярлыки. Всё нужное будет рядом.</value>
+  </data>
+  <data xml:space="preserve" name="AddAppsShortcutsOrFiles">
+    <value>Добавить приложения, ярлыки или файлы</value>
+  </data>
+  <data xml:space="preserve" name="AddToDesktop">
+    <value>Добавить на рабочий стол</value>
+  </data>
+  <data xml:space="preserve" name="EmptyFolderHelp">
+    <value>Добавьте приложения из Windows или перетащите сюда ярлыки. Папки можно вкладывать друг в друга.</value>
+  </data>
+  <data xml:space="preserve" name="AllFolders">
+    <value>Все папки</value>
+  </data>
+  <data xml:space="preserve" name="InvalidApplicationChildren">
+    <value>У приложения должен быть адрес запуска и не может быть вложенных элементов.</value>
+  </data>
+  <data xml:space="preserve" name="AppIcons">
+    <value>Иконки приложений</value>
+  </data>
+  <data xml:space="preserve" name="AppProperties">
+    <value>Свойства приложения</value>
+  </data>
+  <data xml:space="preserve" name="AppSettings">
+    <value>Параметры приложения</value>
+  </data>
+  <data xml:space="preserve" name="AppShelfAppFolders">
+    <value>AppShelf — папки приложений</value>
+  </data>
+  <data xml:space="preserve" name="AppShelfFolder">
+    <value>AppShelf — папка</value>
+  </data>
+  <data xml:space="preserve" name="ExportFileFilter">
+    <value>Папки AppShelf|*.appshelf.json</value>
+  </data>
+  <data xml:space="preserve" name="ImportFileFilter">
+    <value>Папки AppShelf|*.json</value>
+  </data>
+  <data xml:space="preserve" name="AppShelfSettings">
+    <value>Параметры AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationFileOrLink">
+    <value>Приложение, файл или ссылка</value>
+  </data>
+  <data xml:space="preserve" name="Apps">
+    <value>Приложения</value>
+  </data>
+  <data xml:space="preserve" name="AppsAdded0">
+    <value>Добавлено приложений: {0}</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationFileFilter">
+    <value>Приложения и ярлыки|*.exe;*.lnk;*.url|Все файлы|*.*</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationShortcutFilter">
+    <value>Приложения и ярлыки|*.exe;*.lnk;*.url;*.appref-ms|Все файлы|*.*</value>
+  </data>
+  <data xml:space="preserve" name="AppsFound0">
+    <value>Найдено приложений: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Automatic">
+    <value>Автоматически</value>
+  </data>
+  <data xml:space="preserve" name="Back">
+    <value>Назад: </value>
+  </data>
+  <data xml:space="preserve" name="BackAltLeft">
+    <value>Назад (Alt+←)</value>
+  </data>
+  <data xml:space="preserve" name="BackgroundOpacity">
+    <value>Непрозрачность подложки</value>
+  </data>
+  <data xml:space="preserve" name="Backups">
+    <value>Резервные копии</value>
+  </data>
+  <data xml:space="preserve" name="Blue">
+    <value>Синий</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Отмена</value>
+  </data>
+  <data xml:space="preserve" name="ChooseFile">
+    <value>Выбрать файл…</value>
+  </data>
+  <data xml:space="preserve" name="ChooseFiles">
+    <value>Выбрать файлы…</value>
+  </data>
+  <data xml:space="preserve" name="ChooseIcon">
+    <value>Выбрать иконку…</value>
+  </data>
+  <data xml:space="preserve" name="ChooseImage">
+    <value>Выбрать картинку…</value>
+  </data>
+  <data xml:space="preserve" name="ChooseTheAppsToIncludeInThisFolder">
+    <value>Выберите приложения, которые хотите видеть в этой папке.</value>
+  </data>
+  <data xml:space="preserve" name="ChooseTheInterfaceLanguage">
+    <value>Выберите язык интерфейса</value>
+  </data>
+  <data xml:space="preserve" name="CloseTitleHelp">
+    <value>Нажмите на название, чтобы закрыть папку · Esc</value>
+  </data>
+  <data xml:space="preserve" name="BackTitleHelp">
+    <value>Нажмите на название, чтобы вернуться · Esc — закрыть</value>
+  </data>
+  <data xml:space="preserve" name="CloseAfterLaunchingAnApp">
+    <value>Закрывать после запуска приложения</value>
+  </data>
+  <data xml:space="preserve" name="CloseOnOutsideClickOrWindowSwitch">
+    <value>Закрывать по клику снаружи и при переключении окна</value>
+  </data>
+  <data xml:space="preserve" name="Cloud">
+    <value>Облако</value>
+  </data>
+  <data xml:space="preserve" name="Code">
+    <value>Код</value>
+  </data>
+  <data xml:space="preserve" name="Columns">
+    <value>Столбцов</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotDetermineTheApplicationPath">
+    <value>Не удалось определить путь к приложению.</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotFindAnAvailableShortcutName">
+    <value>Не удалось выбрать свободное имя ярлыка.</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotLoadTheList">
+    <value>Не удалось получить список: </value>
+  </data>
+  <data xml:space="preserve" name="CouldNotOpenAppShelf">
+    <value>Не удалось открыть AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="CreateFolder">
+    <value>Создать папку</value>
+  </data>
+  <data xml:space="preserve" name="CustomIconOptional">
+    <value>Своя иконка (необязательно)</value>
+  </data>
+  <data xml:space="preserve" name="Cyan">
+    <value>Голубой</value>
+  </data>
+  <data xml:space="preserve" name="Dark">
+    <value>Тёмная</value>
+  </data>
+  <data xml:space="preserve" name="Desktop">
+    <value>Рабочий стол</value>
+  </data>
+  <data xml:space="preserve" name="Documents">
+    <value>Документы</value>
+  </data>
+  <data xml:space="preserve" name="Done">
+    <value>Готово</value>
+  </data>
+  <data xml:space="preserve" name="Drawing">
+    <value>Рисование</value>
+  </data>
+  <data xml:space="preserve" name="DropAnAppOntoAnotherAppToCreateAFolder">
+    <value>Перетащите приложение на приложение, чтобы создать папку</value>
+  </data>
+  <data xml:space="preserve" name="EditorTheme">
+    <value>Тема редактора</value>
+  </data>
+  <data xml:space="preserve" name="ExportAllFolders">
+    <value>Экспортировать все папки…</value>
+  </data>
+  <data xml:space="preserve" name="FOLDERS">
+    <value>ПАПКИ</value>
+  </data>
+  <data xml:space="preserve" name="Favorites">
+    <value>Избранное</value>
+  </data>
+  <data xml:space="preserve" name="FolderSuffix">
+    <value> · папка</value>
+  </data>
+  <data xml:space="preserve" name="Folder">
+    <value>Папка</value>
+  </data>
+  <data xml:space="preserve" name="FolderActions">
+    <value>Действия с папкой</value>
+  </data>
+  <data xml:space="preserve" name="FolderAddedToDesktop">
+    <value>Папка добавлена на рабочий стол</value>
+  </data>
+  <data xml:space="preserve" name="FolderAddedToDesktop2">
+    <value>Папка добавлена на рабочий стол.</value>
+  </data>
+  <data xml:space="preserve" name="FolderIcon">
+    <value>Значок папки</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconImage">
+    <value>Картинка для значка папки</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconPreview">
+    <value>Предпросмотр значка папки</value>
+  </data>
+  <data xml:space="preserve" name="FolderMenuPreview">
+    <value>Предпросмотр меню папки</value>
+  </data>
+  <data xml:space="preserve" name="FolderNotFound">
+    <value>Папка не найдена.</value>
+  </data>
+  <data xml:space="preserve" name="FolderRemovedFromDesktop">
+    <value>Папка убрана с рабочего стола.</value>
+  </data>
+  <data xml:space="preserve" name="FolderSettings">
+    <value>Параметры папки</value>
+  </data>
+  <data xml:space="preserve" name="FolderSettings2">
+    <value>Параметры папки…</value>
+  </data>
+  <data xml:space="preserve" name="FollowWindows">
+    <value>Как в Windows</value>
+  </data>
+  <data xml:space="preserve" name="PagingHelp">
+    <value>Если приложений больше, меню листается колесом мыши, PageUp/PageDown или точками справа.</value>
+  </data>
+  <data xml:space="preserve" name="Games">
+    <value>Игры</value>
+  </data>
+  <data xml:space="preserve" name="Graphite">
+    <value>Графит</value>
+  </data>
+  <data xml:space="preserve" name="Gray">
+    <value>Серый</value>
+  </data>
+  <data xml:space="preserve" name="Green">
+    <value>Зелёный</value>
+  </data>
+  <data xml:space="preserve" name="Heart">
+    <value>Сердце</value>
+  </data>
+  <data xml:space="preserve" name="Home">
+    <value>Дом</value>
+  </data>
+  <data xml:space="preserve" name="IconScaleDesktop">
+    <value>Масштаб иконок · рабочий стол</value>
+  </data>
+  <data xml:space="preserve" name="IconScaleTaskbar">
+    <value>Масштаб иконок · панель задач</value>
+  </data>
+  <data xml:space="preserve" name="SurfaceScaleHelp">
+    <value>Размер иконок внутри открытой папки. Настройки для двух мест независимы.</value>
+  </data>
+  <data xml:space="preserve" name="IconFileFilter">
+    <value>Иконки и изображения|*.ico;*.png;*.jpg;*.exe|Все файлы|*.*</value>
+  </data>
+  <data xml:space="preserve" name="Ideas">
+    <value>Идеи</value>
+  </data>
+  <data xml:space="preserve" name="Image">
+    <value>Картинка</value>
+  </data>
+  <data xml:space="preserve" name="ImageFileFilter">
+    <value>Картинки|*.png;*.jpg;*.jpeg;*.bmp;*.ico</value>
+  </data>
+  <data xml:space="preserve" name="ImportFolders">
+    <value>Импортировать папки…</value>
+  </data>
+  <data xml:space="preserve" name="InAppShelf">
+    <value>» в AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="Internet">
+    <value>Интернет</value>
+  </data>
+  <data xml:space="preserve" name="InvalidFolderList">
+    <value>Некорректный список папок.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidFolderSettings">
+    <value>Некорректные параметры папки.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidItem">
+    <value>Некорректный элемент.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidOrDuplicateIdentifiers">
+    <value>Некорректные или повторяющиеся идентификаторы.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidSettings">
+    <value>Некорректные настройки.</value>
+  </data>
+  <data xml:space="preserve" name="ItemNotFound">
+    <value>Элемент не найден.</value>
+  </data>
+  <data xml:space="preserve" name="ItemRemovedPressCtrlZToUndo">
+    <value>Элемент убран. Ctrl+Z — отменить</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Язык</value>
+  </data>
+  <data xml:space="preserve" name="Launch0Apps">
+    <value>Запустить приложений: {0}?</value>
+  </data>
+  <data xml:space="preserve" name="LaunchAll">
+    <value>Запустить всё</value>
+  </data>
+  <data xml:space="preserve" name="LaunchAllAppsInThisFolder">
+    <value>Запустить всё в папке</value>
+  </data>
+  <data xml:space="preserve" name="LaunchAppShelfExeDirectlyToUseShortcuts">
+    <value>Для ярлыков запустите AppShelf.exe напрямую.</value>
+  </data>
+  <data xml:space="preserve" name="LaunchArguments">
+    <value>Аргументы запуска</value>
+  </data>
+  <data xml:space="preserve" name="Light">
+    <value>Светлая</value>
+  </data>
+  <data xml:space="preserve" name="LinkOrCommand">
+    <value>Ссылка или команда…</value>
+  </data>
+  <data xml:space="preserve" name="LoadingWindowsApps">
+    <value>Загрузка приложений Windows…</value>
+  </data>
+  <data xml:space="preserve" name="Magenta">
+    <value>Малиновый</value>
+  </data>
+  <data xml:space="preserve" name="Mail">
+    <value>Почта</value>
+  </data>
+  <data xml:space="preserve" name="MenuTheme">
+    <value>Тема меню</value>
+  </data>
+  <data xml:space="preserve" name="Messages">
+    <value>Сообщения</value>
+  </data>
+  <data xml:space="preserve" name="Move">
+    <value>Переместить</value>
+  </data>
+  <data xml:space="preserve" name="Move2">
+    <value>Переместить…</value>
+  </data>
+  <data xml:space="preserve" name="MoveToFolder">
+    <value>Переместить в папку</value>
+  </data>
+  <data xml:space="preserve" name="Music">
+    <value>Музыка</value>
+  </data>
+  <data xml:space="preserve" name="MyFolders">
+    <value>Мои папки</value>
+  </data>
+  <data xml:space="preserve" name="Name">
+    <value>Название</value>
+  </data>
+  <data xml:space="preserve" name="NewApp">
+    <value>Новое приложение</value>
+  </data>
+  <data xml:space="preserve" name="NewFolder">
+    <value>Новая папка</value>
+  </data>
+  <data xml:space="preserve" name="NoImageSelected">
+    <value>Картинка не выбрана</value>
+  </data>
+  <data xml:space="preserve" name="NoResultsFound">
+    <value>Ничего не найдено</value>
+  </data>
+  <data xml:space="preserve" name="NotFound">
+    <value> — не найдено</value>
+  </data>
+  <data xml:space="preserve" name="MissingApplicationDescription">
+    <value>Не найдено — программу удалили или переместили. Свойства… — указать заново</value>
+  </data>
+  <data xml:space="preserve" name="Opacity">
+    <value>Непрозрачность</value>
+  </data>
+  <data xml:space="preserve" name="Open">
+    <value>Открыть</value>
+  </data>
+  <data xml:space="preserve" name="OpenAppShelf">
+    <value>Открыть AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="OpenCompactMenu">
+    <value>Открыть компактное меню</value>
+  </data>
+  <data xml:space="preserve" name="OpenFolder">
+    <value>Открыть папку</value>
+  </data>
+  <data xml:space="preserve" name="OpenFolder2">
+    <value>Открыть папку «</value>
+  </data>
+  <data xml:space="preserve" name="OpenSettingsDirectory">
+    <value>Открыть папку настроек</value>
+  </data>
+  <data xml:space="preserve" name="OpenTaskbarMenu">
+    <value>Открыть с панели задач</value>
+  </data>
+  <data xml:space="preserve" name="Orange">
+    <value>Оранжевый</value>
+  </data>
+  <data xml:space="preserve" name="OrganizeYourAppsIntoFolders">
+    <value>Соберите приложения в папки</value>
+  </data>
+  <data xml:space="preserve" name="Page0Of1">
+    <value>Страница {0} из {1}</value>
+  </data>
+  <data xml:space="preserve" name="People">
+    <value>Люди</value>
+  </data>
+  <data xml:space="preserve" name="Photos">
+    <value>Фото</value>
+  </data>
+  <data xml:space="preserve" name="Place">
+    <value>Разместить</value>
+  </data>
+  <data xml:space="preserve" name="PlaceFolder">
+    <value>Разместить папку</value>
+  </data>
+  <data xml:space="preserve" name="Properties">
+    <value>Свойства…</value>
+  </data>
+  <data xml:space="preserve" name="Purple">
+    <value>Фиолетовый</value>
+  </data>
+  <data xml:space="preserve" name="Quit">
+    <value>Завершить работу</value>
+  </data>
+  <data xml:space="preserve" name="QuitAppShelf">
+    <value>Завершить работу AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="Red">
+    <value>Красный</value>
+  </data>
+  <data xml:space="preserve" name="RefreshIconsHelp">
+    <value>Если приложение обновилось, а в папках осталась старая иконка. Иконки также обновляются сами раз в неделю.</value>
+  </data>
+  <data xml:space="preserve" name="RefreshIcons">
+    <value>Обновить иконки</value>
+  </data>
+  <data xml:space="preserve" name="RefreshStarted">
+    <value>Обновление запущено</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFolder">
+    <value>Убрать папку «</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFromAppShelf">
+    <value>Убрать из AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFromDesktop">
+    <value>Убрать с рабочего стола</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFromTaskbar">
+    <value>Убрать с панели задач</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFolderConfirmation">
+    <value>Убрать папку вместе с её содержимым из AppShelf? Приложения и файлы останутся на компьютере.</value>
+  </data>
+  <data xml:space="preserve" name="Rename">
+    <value>Переименовать</value>
+  </data>
+  <data xml:space="preserve" name="Rename2">
+    <value>Переименовать…</value>
+  </data>
+  <data xml:space="preserve" name="Results0">
+    <value>Результатов: {0}</value>
+  </data>
+  <data xml:space="preserve" name="RowsPerPage">
+    <value>Строк на странице</value>
+  </data>
+  <data xml:space="preserve" name="RunAsAdministrator">
+    <value>Запускать от имени администратора</value>
+  </data>
+  <data xml:space="preserve" name="RunAsAdministrator2">
+    <value>Запустить от имени администратора</value>
+  </data>
+  <data xml:space="preserve" name="RussianLanguageName">
+    <value>Русский</value>
+  </data>
+  <data xml:space="preserve" name="Save">
+    <value>Сохранить</value>
+  </data>
+  <data xml:space="preserve" name="Search">
+    <value>Поиск</value>
+  </data>
+  <data xml:space="preserve" name="SearchAppsAndFolders">
+    <value>Поиск приложений и папок</value>
+  </data>
+  <data xml:space="preserve" name="SearchInstalledApps">
+    <value>Поиск в установленных приложениях</value>
+  </data>
+  <data xml:space="preserve" name="Security">
+    <value>Защита</value>
+  </data>
+  <data xml:space="preserve" name="Selected0">
+    <value>Выбрано: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Settings">
+    <value>Настройки</value>
+  </data>
+  <data xml:space="preserve" name="Settings2">
+    <value>Параметры</value>
+  </data>
+  <data xml:space="preserve" name="SettingsAreDamagedTheOriginalFileWasPreserved">
+    <value>Настройки повреждены. Исходный файл сохранён: </value>
+  </data>
+  <data xml:space="preserve" name="SettingsForThisFolder">
+    <value>Параметры этой папки</value>
+  </data>
+  <data xml:space="preserve" name="SettingsRecovered">
+    <value>Настройки восстановлены из резервной копии. Повреждённый файл сохранён рядом.</value>
+  </data>
+  <data xml:space="preserve" name="ShortcutsAndFiles">
+    <value>Ярлыки и файлы…</value>
+  </data>
+  <data xml:space="preserve" name="ShowIconLabels">
+    <value>Подписи под иконками</value>
+  </data>
+  <data xml:space="preserve" name="ShowOnTaskbar">
+    <value>Показать на панели задач</value>
+  </data>
+  <data xml:space="preserve" name="ShowThisFolderOnTheDesktopTaskbarOrBoth">
+    <value>Показывайте папку на рабочем столе, панели задач или в обоих местах.</value>
+  </data>
+  <data xml:space="preserve" name="SortByName">
+    <value>Сортировать по названию</value>
+  </data>
+  <data xml:space="preserve" name="StartAppShelfWhenISignInToWindows">
+    <value>Запускать AppShelf при входе в Windows</value>
+  </data>
+  <data xml:space="preserve" name="StartMenu0">
+    <value>меню «Пуск»: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Store">
+    <value>Магазин</value>
+  </data>
+  <data xml:space="preserve" name="Study">
+    <value>Учёба</value>
+  </data>
+  <data xml:space="preserve" name="SupportedFormatsPNGJPGBMPAndICO">
+    <value>Поддерживаются PNG, JPG, BMP и ICO.</value>
+  </data>
+  <data xml:space="preserve" name="Symbol">
+    <value>Символ</value>
+  </data>
+  <data xml:space="preserve" name="Taskbar">
+    <value>Панель задач</value>
+  </data>
+  <data xml:space="preserve" name="TaskbarAndDesktop">
+    <value>Панель задач и рабочий стол</value>
+  </data>
+  <data xml:space="preserve" name="TaskbarAndDesktop2">
+    <value>Панель задач и рабочий стол…</value>
+  </data>
+  <data xml:space="preserve" name="BackgroundOperationHelp">
+    <value>Кнопки папок на панели задач и одиночный клик на рабочем столе работают, пока AppShelf запущен в фоне. Крестик скрывает редактор; выход доступен в меню значка у часов.</value>
+  </data>
+  <data xml:space="preserve" name="TaskbarFolderButtonsAreRestoredWhenAppShelfStarts">
+    <value>Размещение на панели задач восстанавливается при запуске AppShelf.</value>
+  </data>
+  <data xml:space="preserve" name="Teal">
+    <value>Бирюзовый</value>
+  </data>
+  <data xml:space="preserve" name="TheFileExceeds16MB">
+    <value>Файл превышает 16 МБ.</value>
+  </data>
+  <data xml:space="preserve" name="TheFolderWasDeleted">
+    <value>Папка удалена.</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconUpdateHelp">
+    <value>Иконка повторяет содержимое папки и обновляется автоматически.</value>
+  </data>
+  <data xml:space="preserve" name="TheImageIsLargerThan20MB">
+    <value>Картинка больше 20 МБ.</value>
+  </data>
+  <data xml:space="preserve" name="TheNestingLimitOf32LevelsWasExceeded">
+    <value>Превышена глубина вложенности (32).</value>
+  </data>
+  <data xml:space="preserve" name="TheNestingLimitWasExceeded">
+    <value>Превышена глубина вложенности.</value>
+  </data>
+  <data xml:space="preserve" name="TheSettingsFileIsEmpty">
+    <value>Пустой файл настроек.</value>
+  </data>
+  <data xml:space="preserve" name="TheShortcutMustBeInsideTheSelectedDirectory">
+    <value>Ярлык должен находиться в выбранной папке.</value>
+  </data>
+  <data xml:space="preserve" name="TheseSettingsApplyOnlyToThisFolder">
+    <value>Настройки применяются только к этой папке.</value>
+  </data>
+  <data xml:space="preserve" name="ThisFileFormatVersionIsNotSupportedYet">
+    <value>Эта версия формата пока не поддерживается.</value>
+  </data>
+  <data xml:space="preserve" name="ThisFolderIsEmpty">
+    <value>Папка пока пуста</value>
+  </data>
+  <data xml:space="preserve" name="ThisFolderIsEmptyAddAppsToPreviewItsMenu">
+    <value>Папка пуста — добавьте приложения, чтобы увидеть меню.</value>
+  </data>
+  <data xml:space="preserve" name="DeletedFolderShortcutHelp">
+    <value>Эта папка была удалена. Создайте новый ярлык для существующей папки.</value>
+  </data>
+  <data xml:space="preserve" name="ThisShortcutBelongsToAnotherApplication">
+    <value>Этот ярлык принадлежит другому приложению.</value>
+  </data>
+  <data xml:space="preserve" name="Tools">
+    <value>Инструменты</value>
+  </data>
+  <data xml:space="preserve" name="TryADifferentName">
+    <value>Попробуйте другое название.</value>
+  </data>
+  <data xml:space="preserve" name="UndoLastChange">
+    <value>Отменить последнее действие</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconHelp">
+    <value>Виден на ярлыке рабочего стола, кнопке панели задач и внутри других папок. Для цветного смайлика выберите его картинкой.</value>
+  </data>
+  <data xml:space="preserve" name="Video">
+    <value>Видео</value>
+  </data>
+  <data xml:space="preserve" name="WhereWouldYouLikeToMoveIt">
+    <value>Куда переместить?</value>
+  </data>
+  <data xml:space="preserve" name="White">
+    <value>Белый</value>
+  </data>
+  <data xml:space="preserve" name="WindowsApps">
+    <value>Приложения из Windows…</value>
+  </data>
+  <data xml:space="preserve" name="Work">
+    <value>Работа</value>
+  </data>
+  <data xml:space="preserve" name="WorkingDirectoryOptional">
+    <value>Рабочая папка (необязательно)</value>
+  </data>
+  <data xml:space="preserve" name="Yellow">
+    <value>Жёлтый</value>
+  </data>
+  <data xml:space="preserve" name="YouCanSelectFilesManually">
+    <value>. Можно выбрать файлы вручную.</value>
+  </data>
+  <data xml:space="preserve" name="YourAppsInYourOwnOrder">
+    <value>Ваши приложения. В своём порядке.</value>
+  </data>
+  <data xml:space="preserve" name="YourFolderWillAppearHere">
+    <value>Здесь будет ваша папка</value>
+  </data>
+  <data xml:space="preserve" name="ItemsOne">
+    <value>{0} элемент</value>
+  </data>
+  <data xml:space="preserve" name="ItemsFew">
+    <value>{0} элемента</value>
+  </data>
+  <data xml:space="preserve" name="ItemsMany">
+    <value>{0} элементов</value>
+  </data>
+  <data xml:space="preserve" name="UnknownTool">
+    <value>Неизвестный инструмент: {0}</value>
+  </data>
+  <data xml:space="preserve" name="MissingParameter">
+    <value>Не указан параметр {0}.</value>
+  </data>
+  <data xml:space="preserve" name="GroupsRequired">
+    <value>Нужен непустой список groups.</value>
+  </data>
+  <data xml:space="preserve" name="FolderItemsRequired">
+    <value>Для папки «{0}» не указаны items.</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconIsNotAnApp">
+    <value>«{0}» — это значок папки AppShelf, а не приложение.</value>
+  </data>
+  <data xml:space="preserve" name="MissingItemsNoChanges">
+    <value>Ничего не изменено: не найдены элементы. </value>
+  </data>
+  <data xml:space="preserve" name="AlreadyInFolder">
+    <value>{0} — уже в «{1}»</value>
+  </data>
+  <data xml:space="preserve" name="NotOnDesktopKept">
+    <value>{0} — лежит не на рабочем столе, его место не меняется</value>
+  </data>
+  <data xml:space="preserve" name="SharedShortcutKept">
+    <value>{0} — общий ярлык всех пользователей, убрать его можно только с правами администратора</value>
+  </data>
+  <data xml:space="preserve" name="NonShortcutKept">
+    <value>{0} — это не ярлык, файлы и папки не перемещаются</value>
+  </data>
+  <data xml:space="preserve" name="OrganizeUndoHelp">
+    <value>undo отменит изменения папок; restore_desktop вернёт ярлыки на рабочий стол</value>
+  </data>
+  <data xml:space="preserve" name="FolderNameRequired">
+    <value>Не указано название папки.</value>
+  </data>
+  <data xml:space="preserve" name="AmbiguousFolder">
+    <value>Папок «{0}» несколько: {1}. Укажите путь через «/».</value>
+  </data>
+  <data xml:space="preserve" name="NamedFolderNotFound">
+    <value>Папка «{0}» не найдена.</value>
+  </data>
+  <data xml:space="preserve" name="FolderNameTooLong">
+    <value>Слишком длинное название папки.</value>
+  </data>
+  <data xml:space="preserve" name="ItemRequired">
+    <value>Не указан элемент.</value>
+  </data>
+  <data xml:space="preserve" name="NamedItemNotFound">
+    <value>«{0}» нет в AppShelf.</value>
+  </data>
+  <data xml:space="preserve" name="AmbiguousItem">
+    <value>«{0}» встречается несколько раз: {1}. Укажите путь через «/».</value>
+  </data>
+  <data xml:space="preserve" name="TopLevel">
+    <value>верхний уровень</value>
+  </data>
+  <data xml:space="preserve" name="NewNameLength">
+    <value>Новое название должно быть от 1 до 200 символов.</value>
+  </data>
+  <data xml:space="preserve" name="RemoveItemHelp">
+    <value>Программы и файлы на диске не тронуты; undo вернёт элемент, значок папки на рабочий стол вернёт place_folder.</value>
+  </data>
+  <data xml:space="preserve" name="PlacementRequired">
+    <value>Укажите desktop и/или taskbar.</value>
+  </data>
+  <data xml:space="preserve" name="OpacityRange">
+    <value>opacity: от 5 до 100.</value>
+  </data>
+  <data xml:space="preserve" name="UnknownColor">
+    <value>Неизвестный цвет: {0}. Есть: {1}</value>
+  </data>
+  <data xml:space="preserve" name="LookValues">
+    <value>look: apps, symbol или picture.</value>
+  </data>
+  <data xml:space="preserve" name="UnknownSymbol">
+    <value>Неизвестный символ: {0}. Есть: {1}</value>
+  </data>
+  <data xml:space="preserve" name="SymbolRequired">
+    <value>Для look=symbol укажите symbol.</value>
+  </data>
+  <data xml:space="preserve" name="PictureRequired">
+    <value>Для look=picture укажите путь к существующей картинке.</value>
+  </data>
+  <data xml:space="preserve" name="ArchivedCopyMissing">
+    <value>{0} — копии в архиве нет</value>
+  </data>
+  <data xml:space="preserve" name="DesktopNameTaken">
+    <value>{0} — на рабочем столе уже есть файл с таким именем</value>
+  </data>
+  <data xml:space="preserve" name="NothingToUndo">
+    <value>Отменять нечего.</value>
+  </data>
+  <data xml:space="preserve" name="RestoreDesktopHelp">
+    <value>Ярлыки, убранные с рабочего стола, возвращает restore_desktop.</value>
+  </data>
+  <data xml:space="preserve" name="ConnectionClosed">
+    <value>AppShelf закрыл соединение без ответа.</value>
+  </data>
+  <data xml:space="preserve" name="EmptyReply">
+    <value>Пустой ответ AppShelf.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidRequestSize">
+    <value>Слишком большой или пустой запрос.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidRequest">
+    <value>Некорректный запрос: {0}</value>
+  </data>
+  <data xml:space="preserve" name="AppNotResponding">
+    <value>AppShelf не отвечает: {0}</value>
+  </data>
+  <data xml:space="preserve" name="ResidentExecutableMissing">
+    <value>AppShelf не запущен, а AppShelf.exe не найден рядом с сервером MCP.</value>
+  </data>
+</root>

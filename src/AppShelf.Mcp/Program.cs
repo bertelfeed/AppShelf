@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AppShelf.Core;
+using L = AppShelf.Core.Localization;
 
 // MCP server over stdio: JSON-RPC 2.0, one message per line. It holds no state of its own;
 // every tool call goes to the resident AppShelf of the profile, which is started in the background when needed.
@@ -11,6 +12,7 @@ using AppShelf.Core;
 
 var dataPath = Argument(args, "--data-dir") ?? DefaultDataPath();
 var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+RefreshLanguage();
 var knownTools = ShelfApiTools.List().Select(x => x!["name"]!.GetValue<string>()).ToHashSet();
 using var input = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false));
 await using var output = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false)) { AutoFlush = true };
@@ -50,8 +52,9 @@ JsonObject Initialize(JsonObject? parameters) => new()
 
 async Task<JsonObject> CallAsync(JsonObject? parameters)
 {
+    RefreshLanguage();
     var name = parameters?["name"]?.GetValue<string>() ?? "";
-    if (!knownTools.Contains(name)) return ToolResult("Неизвестный инструмент: " + name, true);
+    if (!knownTools.Contains(name)) return ToolResult(L.F("UnknownTool", name), true);
     var arguments = parameters?["arguments"] as JsonObject;
     try
     {
@@ -59,7 +62,7 @@ async Task<JsonObject> CallAsync(JsonObject? parameters)
         return ToolResult(reply.Text, !reply.Ok);
     }
     catch (Exception ex) when (ex is IOException or TimeoutException or UnauthorizedAccessException)
-    { return ToolResult("AppShelf не отвечает: " + ex.Message, true); }
+    { return ToolResult(L.F("AppNotResponding", ex.Message), true); }
 }
 
 async Task<ShelfApiChannel.Reply> SendAsync(string tool, JsonObject? arguments)
@@ -68,7 +71,7 @@ async Task<ShelfApiChannel.Reply> SendAsync(string tool, JsonObject? arguments)
     catch (TimeoutException) { }
     // AppShelf is not running for this profile: start it in the background and wait for its pipe.
     var executable = Path.Combine(AppContext.BaseDirectory, "AppShelf.exe");
-    if (!File.Exists(executable)) throw new IOException("AppShelf не запущен, а AppShelf.exe не найден рядом с сервером MCP.");
+    if (!File.Exists(executable)) throw new IOException(L.Get("ResidentExecutableMissing"));
     // Shell execution: the resident app must not inherit this server's stdio pipes, or the client would never see them close.
     Process.Start(new ProcessStartInfo(executable, $"--background --data-dir \"{dataPath.TrimEnd('\\')}\"") { UseShellExecute = true })?.Dispose();
     var deadline = DateTime.UtcNow.AddSeconds(20);
@@ -77,6 +80,18 @@ async Task<ShelfApiChannel.Reply> SendAsync(string tool, JsonObject? arguments)
         try { return await ShelfApiChannel.SendAsync(dataPath, tool, arguments, 1000); }
         catch (TimeoutException) when (DateTime.UtcNow < deadline) { }
     }
+}
+
+void RefreshLanguage()
+{
+    // The MCP process may outlive a language change in the editor. Read only; never rewrite the profile.
+    try
+    {
+        var path = Path.Combine(dataPath, "shelf.json");
+        L.SetLanguage(File.Exists(path) ? ConfigurationStore.Read(path).Language : L.DefaultLanguage);
+    }
+    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
+    { L.SetLanguage(L.DefaultLanguage); }
 }
 
 static JsonObject ToolResult(string text, bool isError) => new()

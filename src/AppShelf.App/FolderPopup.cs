@@ -26,7 +26,7 @@ public static class FolderGrid
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, i == current ? "TextBrush" : "MutedBrush");
             var target = new Border { Width = DotsWidth, Height = 12, Background = Brushes.Transparent, Child = dot };
-            System.Windows.Automation.AutomationProperties.SetName(target, $"Страница {i + 1} из {pages}");
+            System.Windows.Automation.AutomationProperties.SetName(target, L.F("Page0Of1", i + 1, pages));
             if (select is not null)
             {
                 var index = i;
@@ -103,7 +103,7 @@ public static class FolderGrid
             label.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush"); content.Children.Add(label);
         }
         var button = new Button { Width = tileWidth - 2, Height = tileHeight - 2, Margin = new Thickness(1), MinWidth = 0, MinHeight = 0,
-            Content = content, ToolTip = model.Missing ? item.Name + " — не найдено" : item.Name, DataContext = model, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0),
+            Content = content, ToolTip = model.Missing ? item.Name + L.Get("NotFound") : item.Name, DataContext = model, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
         System.Windows.Automation.AutomationProperties.SetName(button, item.Name);
         return button;
@@ -150,7 +150,7 @@ public sealed class FolderPopup : Window
     public bool OpenedFromDesktop => fromDesktop;
     public FolderPopup()
     {
-        Title = "AppShelf — папка"; ShowInTaskbar = false; WindowStyle = WindowStyle.None;
+        Title = L.Get("AppShelfFolder"); ShowInTaskbar = false; WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize; SizeToContent = SizeToContent.Manual;
         FontFamily = new FontFamily("Segoe UI Variable Text"); FontSize = 14;
         SetResourceReference(BackgroundProperty, "SurfaceBrush"); SetResourceReference(ForegroundProperty, "TextBrush");
@@ -381,7 +381,7 @@ public sealed class FolderPopup : Window
         var unused = new List<string>();
         App.Current.Session.Change(config =>
         {
-            var container = ShelfTree.Find(config, into ?? currentId)?.Children ?? throw new InvalidOperationException("Папка удалена.");
+            var container = ShelfTree.Find(config, into ?? currentId)?.Children ?? throw new InvalidOperationException(L.Get("TheFolderWasDeleted"));
             var at = into is null ? Math.Clamp(position, 0, container.Count) : container.Count;
             foreach (var item in items)
             {
@@ -403,7 +403,7 @@ public sealed class FolderPopup : Window
         App.Current.Session.Change(config =>
         {
             if (into is { } folder) { if (folder != id) ShelfTree.Move(config, id, folder); return; }
-            var container = ShelfTree.Find(config, currentId)?.Children ?? throw new InvalidOperationException("Папка удалена.");
+            var container = ShelfTree.Find(config, currentId)?.Children ?? throw new InvalidOperationException(L.Get("TheFolderWasDeleted"));
             var before = position >= 0 && position < container.Count ? container[position].Id : (Guid?)null;
             if (before != id) ShelfTree.Move(config, id, currentId, before);
         });
@@ -444,8 +444,8 @@ public sealed class FolderPopup : Window
             title.Content = caption;
         }
         else title.Content = name;
-        System.Windows.Automation.AutomationProperties.SetName(title, nested ? "Назад: " + folder.Name : folder.Name);
-        title.ToolTip = currentId == RootFolderId ? "Нажмите на название, чтобы закрыть папку · Esc" : "Нажмите на название, чтобы вернуться · Esc — закрыть";
+        System.Windows.Automation.AutomationProperties.SetName(title, nested ? L.Get("Back") + folder.Name : folder.Name);
+        title.ToolTip = currentId == RootFolderId ? L.Get("CloseTitleHelp") : L.Get("BackTitleHelp");
         tiles.Children.Clear();
         (tileWidth, tileHeight) = FolderGrid.TileSize(settings, fromDesktop);
         var columns = FolderGrid.Columns(settings, folder.Children.Count);

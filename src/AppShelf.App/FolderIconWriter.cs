@@ -37,11 +37,12 @@ public static class FolderIconWriter
     public static async Task<FolderLook?> LookAsync(FolderSettings settings)
     {
         var plate = FolderLook.ParseColor(settings.FaceColor);
+        var opacity = Math.Clamp(settings.FaceOpacity, 5, 100) / 100d;
         if (settings.Face == FolderFace.Image && PicturePath(settings.FaceImage) is { } picture &&
             await App.Current.Session.Icons.GetAsync(picture) is { } image)
-            return new(plate, null, image);
-        if (settings.Face == FolderFace.Symbol && settings.FaceSymbol.Length > 0) return new(plate, settings.FaceSymbol);
-        return plate is null ? null : new(plate);
+            return new(plate, null, image, opacity);
+        if (settings.Face == FolderFace.Symbol && settings.FaceSymbol.Length > 0) return new(plate, settings.FaceSymbol, null, opacity);
+        return plate is null && settings.FaceOpacity == 40 ? null : new(plate, null, null, opacity);
     }
 
     /// <summary>Stored pictures are relative to the profile, so a portable copy keeps them.</summary>
@@ -57,8 +58,8 @@ public static class FolderIconWriter
     {
         var info = new FileInfo(source);
         var extension = info.Extension.ToLowerInvariant();
-        if (!PictureExtensions.Contains(extension)) throw new InvalidOperationException("Поддерживаются PNG, JPG, BMP и ICO.");
-        if (info.Length > 20 * 1024 * 1024) throw new InvalidOperationException("Картинка больше 20 МБ.");
+        if (!PictureExtensions.Contains(extension)) throw new InvalidOperationException(L.Get("SupportedFormatsPNGJPGBMPAndICO"));
+        if (info.Length > 20 * 1024 * 1024) throw new InvalidOperationException(L.Get("TheImageIsLargerThan20MB"));
         var bytes = File.ReadAllBytes(source);
         var name = $"{folderId:N}-{Convert.ToHexString(SHA256.HashData(bytes))[..16]}{extension}";
         var directory = System.IO.Path.Combine(App.Current.Session.Store.DirectoryPath, "folder-art");

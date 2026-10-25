@@ -14,6 +14,9 @@ public sealed class DesktopSingleClick : IDisposable
     private readonly FileSystemWatcher? watcher;
     private readonly DispatcherTimer refreshTimer;
     private volatile Dictionary<string, Guid> shortcuts = new(StringComparer.CurrentCultureIgnoreCase);
+    // Last left press, seen on the hook thread only.
+    private Point press;
+    private bool pressedOnDesktop;
     private Guid lastFolder;
     private DateTime lastClick;
     private volatile bool disposed;
@@ -68,13 +71,22 @@ public sealed class DesktopSingleClick : IDisposable
     private void MouseMessage(InputHooks.MouseEvent input)
     {
         // Runs on the hook thread: only cheap window checks here, the rest goes to the dispatcher.
-        if (disposed || input.Message != 0x202 || shortcuts.Count == 0) return;
+        if (disposed || shortcuts.Count == 0 || input.Message is not (0x201 or 0x202)) return;
         var point = new Point { X = input.X, Y = input.Y };
         var window = WindowFromPoint(point);
         var root = GetAncestor(window, 2);
-        if (ClassName(window) == "SysListView32" && ClassName(root) is "Progman" or "WorkerW")
-            dispatcher.BeginInvoke(new Action(() => _ = HandleClickAsync(point, root)));
+        var onDesktop = ClassName(window) == "SysListView32" && ClassName(root) is "Progman" or "WorkerW";
+        if (input.Message == 0x201) { press = point; pressedOnDesktop = onDesktop; return; }
+        // Dragging the folder icon around (or dropping something on it) ends with a release over the icon too;
+        // only a press and release in place is a click.
+        if (!onDesktop || !pressedOnDesktop || !IsClick(press.X, press.Y, point.X, point.Y, GetSystemMetrics(68), GetSystemMetrics(69))) return;
+        pressedOnDesktop = false;
+        dispatcher.BeginInvoke(new Action(() => _ = HandleClickAsync(point, root)));
     }
+
+    /// <summary>A release within the system drag threshold of the press is a click, anything farther is a drag.</summary>
+    public static bool IsClick(int pressX, int pressY, int releaseX, int releaseY, int dragWidth, int dragHeight) =>
+        Math.Abs(releaseX - pressX) <= Math.Max(1, dragWidth / 2) && Math.Abs(releaseY - pressY) <= Math.Max(1, dragHeight / 2);
     private async Task HandleClickAsync(Point point, IntPtr desktop)
     {
         try
@@ -120,5 +132,6 @@ public sealed class DesktopSingleClick : IDisposable
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, System.Text.StringBuilder name, int length);
     [DllImport("user32.dll")] private static extern uint GetDoubleClickTime();
+    [DllImport("user32.dll")] private static extern int GetSystemMetrics(int index);
     [DllImport("oleacc.dll")] private static extern int AccessibleObjectFromPoint(Point point, [MarshalAs(UnmanagedType.Interface)] out IAccessible accessible, [MarshalAs(UnmanagedType.Struct)] out object child);
 }

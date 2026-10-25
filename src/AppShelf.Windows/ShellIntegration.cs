@@ -51,34 +51,40 @@ public static class ShellIntegration
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
+    /// <summary>File name (without .lnk) of a folder's friendly shortcut; Explorer shows it as the icon label.</summary>
+    public static string FolderShortcutName(ShelfItem folder)
+    {
+        var safeName = string.Concat(folder.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)).Trim().TrimEnd('.');
+        if (safeName.Length == 0) safeName = L.Get("Folder");
+        return safeName.Length > 90 ? safeName[..90] : safeName;
+    }
+
     public static string CreateFolderShortcut(ShelfItem folder, string directory, string dataPath, string? iconPath = null,
         string surface = "taskbar", string? existingPath = null, bool friendlyName = false)
     {
         Directory.CreateDirectory(directory);
-        var safeName = string.Concat(folder.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)).Trim().TrimEnd('.');
-        if (safeName.Length == 0) safeName = "Папка";
-        if (safeName.Length > 90) safeName = safeName[..90];
+        var safeName = FolderShortcutName(folder);
         var shortcutPath = existingPath ?? Path.Combine(directory, friendlyName ? safeName + ".lnk" : $"{safeName} — {folder.Id.ToString("N")[..6]}.lnk");
         if (!string.Equals(Path.GetDirectoryName(Path.GetFullPath(shortcutPath)), Path.GetFullPath(directory).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Ярлык должен находиться в выбранной папке.");
+            throw new InvalidOperationException(L.Get("TheShortcutMustBeInsideTheSelectedDirectory"));
         if (File.Exists(shortcutPath) && !IsFolderShortcut(ReadShortcut(shortcutPath), folder.Id, dataPath))
         {
-            if (existingPath is not null) throw new InvalidOperationException("Этот ярлык принадлежит другому приложению.");
+            if (existingPath is not null) throw new InvalidOperationException(L.Get("ThisShortcutBelongsToAnotherApplication"));
             shortcutPath = Path.Combine(directory, $"{safeName} — {folder.Id:N}.lnk");
             if (File.Exists(shortcutPath) && !IsFolderShortcut(ReadShortcut(shortcutPath), folder.Id, dataPath))
-                throw new InvalidOperationException("Не удалось выбрать свободное имя ярлыка.");
+                throw new InvalidOperationException(L.Get("CouldNotFindAnAvailableShortcutName"));
         }
         var existed = File.Exists(shortcutPath);
-        var executable = Environment.ProcessPath ?? throw new InvalidOperationException("Не удалось определить путь к приложению.");
+        var executable = Environment.ProcessPath ?? throw new InvalidOperationException(L.Get("CouldNotDetermineTheApplicationPath"));
         if (Path.GetFileNameWithoutExtension(executable).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Для ярлыков запустите AppShelf.exe напрямую.");
+            throw new InvalidOperationException(L.Get("LaunchAppShelfExeDirectlyToUseShortcuts"));
         var link = (IShellLinkW)new ShellLink();
         try
         {
             link.SetPath(executable);
             link.SetArguments($"--folder {folder.Id:D} --surface {surface} --data-dir \"{dataPath.TrimEnd('\\')}\"");
             link.SetWorkingDirectory(AppContext.BaseDirectory);
-            link.SetDescription("Открыть папку «" + folder.Name + "» в AppShelf");
+            link.SetDescription(L.Get("OpenFolder2") + folder.Name + L.Get("InAppShelf"));
             link.SetIconLocation(iconPath ?? executable, 0);
             var store = (IPropertyStore)link;
             SetProperty(store, AppIdKey, FolderAppId(folder.Id));

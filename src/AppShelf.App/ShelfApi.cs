@@ -45,7 +45,7 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
                 "set_folder_look" => SetLook(args),
                 "restore_desktop" => RestoreDesktop(args),
                 "undo" => Undo(),
-                _ => throw new ApiException("Неизвестный инструмент: " + tool)
+                _ => throw new ApiException(L.F("UnknownTool", tool))
             };
             return new(true, JsonSerializer.Serialize(result, Output));
         }
@@ -55,9 +55,9 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
     }
 
     private static string Text(JsonObject args, string name) =>
-        Text(args, name, true) ?? throw new ApiException($"Не указан параметр {name}.");
+        Text(args, name, true) ?? throw new ApiException(L.F("MissingParameter", name));
     private static string? Text(JsonObject args, string name, bool required) =>
-        args[name] is JsonValue value && value.TryGetValue<string>(out var text) ? text.Trim() : required ? throw new ApiException($"Не указан параметр {name}.") : null;
+        args[name] is JsonValue value && value.TryGetValue<string>(out var text) ? text.Trim() : required ? throw new ApiException(L.F("MissingParameter", name)) : null;
     private static bool? Flag(JsonObject args, string name) =>
         args[name] is JsonValue value && value.TryGetValue<bool>(out var flag) ? flag : null;
 
@@ -180,7 +180,7 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
 
     private async Task<object> OrganizeAsync(JsonObject args)
     {
-        if (args["groups"] is not JsonArray { Count: > 0 } groups) throw new ApiException("Нужен непустой список groups.");
+        if (args["groups"] is not JsonArray { Count: > 0 } groups) throw new ApiException(L.Get("GroupsRequired"));
         var tidy = Flag(args, "tidy_desktop") ?? false;
         var place = Flag(args, "place_on_desktop") ?? true;
         var entries = await DesktopAsync();
@@ -190,12 +190,12 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         foreach (var group in groups.OfType<JsonObject>())
         {
             var folder = Text(group, "folder");
-            if (group["items"] is not JsonArray { Count: > 0 } references) throw new ApiException($"Для папки «{folder}» не указаны items.");
+            if (group["items"] is not JsonArray { Count: > 0 } references) throw new ApiException(L.F("FolderItemsRequired", folder));
             var items = new List<(string, DesktopEntry?, ShelfItem?)>();
             foreach (var reference in references.Select(x => x?.GetValue<string>()?.Trim() ?? ""))
             {
                 var entry = FindEntry(entries, reference) ?? await OutsideAsync(reference);
-                if (entry?.Folder is not null) throw new ApiException($"«{reference}» — это значок папки AppShelf, а не приложение.");
+                if (entry?.Folder is not null) throw new ApiException(L.F("FolderIconIsNotAnApp", reference));
                 var app = entry is null ? FindApp(await InstalledAsync(), reference) : null;
                 if (entry is null && app is null) missing.Add(new { item = reference, suggestions = await SuggestAsync(reference, entries) });
                 else
@@ -208,7 +208,7 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
             plan.Add((folder, items));
         }
         if (missing.Count > 0)
-            throw new ApiException("Ничего не изменено: не найдены элементы. " + JsonSerializer.Serialize(missing, Output));
+            throw new ApiException(L.Get("MissingItemsNoChanges") + JsonSerializer.Serialize(missing, Output));
 
         var created = new List<string>(); var added = new List<string>(); var moved = new List<string>(); var already = new List<string>();
         var targets = new List<Guid>();
@@ -225,7 +225,7 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
                     var existing = entry is not null
                         ? all.FirstOrDefault(x => IsFrom(x, entry.Path)) ?? all.FirstOrDefault(x => IsSame(x, entry.Path, entry.Name))
                         : all.FirstOrDefault(x => !x.IsFolder && SamePath(x.Target, app!.Target)) ?? all.FirstOrDefault(x => !x.IsFolder && x.Name.Equals(app!.Name, Names));
-                    if (existing is not null && folder.Children.Contains(existing)) already.Add($"{existing.Name} — уже в «{label}»");
+                    if (existing is not null && folder.Children.Contains(existing)) already.Add(L.F("AlreadyInFolder", existing.Name, label));
                     else if (existing is not null) { ShelfTree.Move(config, existing.Id, folder.Id); moved.Add($"{existing.Name} → {label}"); }
                     else
                     {
@@ -240,9 +240,9 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         if (tidy)
             foreach (var entry in plan.SelectMany(x => x.Items).Select(x => x.Entry).OfType<DesktopEntry>().DistinctBy(x => x.Path.ToUpperInvariant()))
             {
-                if (!OnDesktop(entry)) kept.Add($"{entry.Name} — лежит не на рабочем столе, его место не меняется");
-                else if (entry.Shared) kept.Add($"{entry.Name} — общий ярлык всех пользователей, убрать его можно только с правами администратора");
-                else if (entry.Kind is not ("shortcut" or "web_link")) kept.Add($"{entry.Name} — это не ярлык, файлы и папки не перемещаются");
+                if (!OnDesktop(entry)) kept.Add(L.F("NotOnDesktopKept", entry.Name));
+                else if (entry.Shared) kept.Add(L.F("SharedShortcutKept", entry.Name));
+                else if (entry.Kind is not ("shortcut" or "web_link")) kept.Add(L.F("NonShortcutKept", entry.Name));
                 else { Archive(entry); archived.Add(entry.Name); }
             }
 
@@ -257,7 +257,7 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         {
             recognized_names = recognized, created_folders = created, added, moved, already_there = already,
             moved_off_desktop = archived, left_on_desktop = kept, folder_icons_added_to_desktop = placed,
-            undo = "undo отменит изменения папок; restore_desktop вернёт ярлыки на рабочий стол"
+            undo = L.Get("OrganizeUndoHelp")
         };
     }
 
@@ -329,18 +329,18 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
     }
 
     private ShelfItem Materialize(DesktopEntry entry) =>
-        ShelfImport.FromPath(Data, entry.Path, entry.Name) ?? throw new ApiException($"«{entry.Name}» — это значок папки AppShelf, а не приложение.");
+        ShelfImport.FromPath(Data, entry.Path, entry.Name) ?? throw new ApiException(L.F("FolderIconIsNotAnApp", entry.Name));
 
     private static ShelfItem FolderByPath(ShelfConfiguration config, string path, List<string>? created)
     {
         var parts = path.Split('/', '\\').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
-        if (parts.Length == 0) throw new ApiException("Не указано название папки.");
+        if (parts.Length == 0) throw new ApiException(L.Get("FolderNameRequired"));
         if (parts.Length == 1)
         {
             var matches = ShelfTree.Walk(config.Items).Where(x => x.IsFolder && x.Name.Equals(parts[0], Names)).ToList();
             if (matches.Count == 1) return matches[0];
             if (matches.Count > 1)
-                throw new ApiException($"Папок «{parts[0]}» несколько: {string.Join(", ", matches.Select(x => FolderPath(config, x.Id)))}. Укажите путь через «/».");
+                throw new ApiException(L.F("AmbiguousFolder", parts[0], string.Join(", ", matches.Select(x => FolderPath(config, x.Id)))));
         }
         var container = config.Items;
         ShelfItem? current = null;
@@ -349,8 +349,8 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
             var next = container.FirstOrDefault(x => x.IsFolder && x.Name.Equals(part, Names));
             if (next is null)
             {
-                if (created is null) throw new ApiException($"Папка «{path}» не найдена.");
-                if (part.Length > 200) throw new ApiException("Слишком длинное название папки.");
+                if (created is null) throw new ApiException(L.F("NamedFolderNotFound", path));
+                if (part.Length > 200) throw new ApiException(L.Get("FolderNameTooLong"));
                 next = ShelfItem.Folder(part); container.Add(next);
                 created.Add(current is null ? part : FolderPath(config, current.Id) + "/" + part);
             }
@@ -362,14 +362,14 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
     private static ShelfItem ItemByPath(ShelfConfiguration config, string reference)
     {
         var parts = reference.Split('/', '\\').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
-        if (parts.Length == 0) throw new ApiException("Не указан элемент.");
+        if (parts.Length == 0) throw new ApiException(L.Get("ItemRequired"));
         IEnumerable<ShelfItem> scope = parts.Length > 1 ? FolderByPath(config, string.Join("/", parts[..^1]), null).Children : ShelfTree.Walk(config.Items);
         var matches = scope.Where(x => x.Name.Equals(parts[^1], Names)).ToList();
         return matches.Count switch
         {
             1 => matches[0],
-            0 => throw new ApiException($"«{reference}» нет в AppShelf."),
-            _ => throw new ApiException($"«{reference}» встречается несколько раз: {string.Join(", ", matches.Select(x => (Location(config, x) is { Length: > 0 } at ? at + "/" : "") + x.Name))}. Укажите путь через «/».")
+            0 => throw new ApiException(L.F("NamedItemNotFound", reference)),
+            _ => throw new ApiException(L.F("AmbiguousItem", reference, string.Join(", ", matches.Select(x => (Location(config, x) is { Length: > 0 } at ? at + "/" : "") + x.Name))))
         };
     }
 
@@ -381,14 +381,14 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
             var item = ItemByPath(config, reference);
             Guid? folder = destination.Trim('/', ' ').Length == 0 ? null : FolderByPath(config, destination, []).Id;
             ShelfTree.Move(config, item.Id, folder);
-            result = $"{item.Name} → {(folder is { } id ? FolderPath(config, id) : "верхний уровень")}";
+            result = $"{item.Name} → {(folder is { } id ? FolderPath(config, id) : L.Get("TopLevel"))}";
         });
         return new { moved = result };
     }
 
     private object RenameItem(string reference, string name)
     {
-        if (name.Length is 0 or > 200) throw new ApiException("Новое название должно быть от 1 до 200 символов.");
+        if (name.Length is 0 or > 200) throw new ApiException(L.Get("NewNameLength"));
         string? old = null;
         session.Change(config => { var item = ItemByPath(config, reference); old = item.Name; item.Name = name; });
         return new { renamed = $"{old} → {name}" };
@@ -407,14 +407,14 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         // A removed folder's desktop icon would open nothing, so it goes too.
         if (publisher is not null)
             foreach (var id in folders) await publisher.RemoveDesktopAsync(id);
-        return new { removed, apps_inside = count, note = "Программы и файлы на диске не тронуты; undo вернёт элемент, значок папки на рабочий стол вернёт place_folder." };
+        return new { removed, apps_inside = count, note = L.Get("RemoveItemHelp") };
     }
 
     private async Task<object> PlaceFolderAsync(JsonObject args)
     {
         var folder = FolderByPath(session.Configuration, Text(args, "folder"), null);
         var desktop = Flag(args, "desktop"); var taskbar = Flag(args, "taskbar");
-        if (desktop is null && taskbar is null) throw new ApiException("Укажите desktop и/или taskbar.");
+        if (desktop is null && taskbar is null) throw new ApiException(L.Get("PlacementRequired"));
         if (desktop is { } show && publisher is not null)
         { if (show) await publisher.AddDesktopAsync(folder.Id); else await publisher.RemoveDesktopAsync(folder.Id); }
         if (taskbar is { } pin)
@@ -429,22 +429,25 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         var colorName = Text(args, "color", required: false);
         var symbolName = Text(args, "symbol", required: false);
         var picture = Text(args, "picture", required: false);
+        int? opacity = args["opacity"] is JsonValue opacityValue && opacityValue.TryGetValue<double>(out var percent) ? (int)Math.Round(percent) : null;
+        if (opacity is < 5 or > 100) throw new ApiException(L.Get("OpacityRange"));
         string? color = colorName switch
         {
             null => null,
-            "Авто" or "auto" or "" => "",
+            _ when colorName.Length == 0 || colorName.Equals("Авто", StringComparison.OrdinalIgnoreCase) ||
+                colorName.Equals("auto", StringComparison.OrdinalIgnoreCase) || colorName.Equals("Automatic", StringComparison.OrdinalIgnoreCase) => "",
             _ when ShelfTree.IsColor(colorName) => colorName.ToUpperInvariant(),
-            _ => FolderFaceCatalog.Palette.FirstOrDefault(x => x.Name.Equals(colorName, Names)).Hex
-                 ?? throw new ApiException("Неизвестный цвет: " + colorName + ". Есть: " + string.Join(", ", FolderFaceCatalog.Palette.Select(x => x.Name)))
+            _ => FolderFaceCatalog.Palette.FirstOrDefault(x => L.CatalogMatches(x.Name, colorName)).Hex
+                 ?? throw new ApiException(L.F("UnknownColor", colorName, string.Join(", ", FolderFaceCatalog.Palette.Select(x => L.CatalogLabel(x.Name)))))
         };
-        FolderFace? face = look switch { null => null, "apps" => FolderFace.Preview, "symbol" => FolderFace.Symbol, "picture" => FolderFace.Image, _ => throw new ApiException("look: apps, symbol или picture.") };
-        string? glyph = symbolName is null ? null : FolderFaceCatalog.Symbols.FirstOrDefault(x => x.Name.Equals(symbolName, Names) || x.Glyph == symbolName).Glyph
-            ?? throw new ApiException("Неизвестный символ: " + symbolName + ". Есть: " + string.Join(", ", FolderFaceCatalog.Symbols.Select(x => x.Name)));
-        if (face == FolderFace.Symbol && glyph is null && folder.Settings.FaceSymbol.Length == 0) throw new ApiException("Для look=symbol укажите symbol.");
+        FolderFace? face = look switch { null => null, "apps" => FolderFace.Preview, "symbol" => FolderFace.Symbol, "picture" => FolderFace.Image, _ => throw new ApiException(L.Get("LookValues")) };
+        string? glyph = symbolName is null ? null : FolderFaceCatalog.Symbols.FirstOrDefault(x => L.CatalogMatches(x.Name, symbolName) || x.Glyph == symbolName).Glyph
+            ?? throw new ApiException(L.F("UnknownSymbol", symbolName, string.Join(", ", FolderFaceCatalog.Symbols.Select(x => L.CatalogLabel(x.Name)))));
+        if (face == FolderFace.Symbol && glyph is null && folder.Settings.FaceSymbol.Length == 0) throw new ApiException(L.Get("SymbolRequired"));
         string? stored = null;
         if (face == FolderFace.Image)
         {
-            if (picture is null || !File.Exists(picture)) throw new ApiException("Для look=picture укажите путь к существующей картинке.");
+            if (picture is null || !File.Exists(picture)) throw new ApiException(L.Get("PictureRequired"));
             stored = FolderIconWriter.ImportPicture(folder.Id, picture);
         }
         session.Change(config =>
@@ -452,6 +455,7 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
             var settings = ShelfTree.Find(config, folder.Id)!.Settings;
             if (face is { } f) settings.Face = f;
             if (color is not null) settings.FaceColor = color;
+            if (opacity is { } value) settings.FaceOpacity = value;
             if (glyph is not null) { settings.FaceSymbol = glyph; if (face is null) settings.Face = FolderFace.Symbol; }
             if (stored is not null) settings.FaceImage = stored;
         });
@@ -460,8 +464,10 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         {
             folder = FolderPath(session.Configuration, folder.Id),
             look = result.Face switch { FolderFace.Symbol => "symbol", FolderFace.Image => "picture", _ => "apps" },
-            color = FolderFaceCatalog.Palette.FirstOrDefault(x => x.Hex == result.FaceColor).Name ?? (result.FaceColor.Length == 0 ? "Авто" : result.FaceColor),
-            symbol = FolderFaceCatalog.Symbols.FirstOrDefault(x => x.Glyph == result.FaceSymbol).Name
+            color = FolderFaceCatalog.Palette.FirstOrDefault(x => x.Hex == result.FaceColor).Name is { } colorLabel
+                ? L.CatalogLabel(colorLabel) : result.FaceColor.Length == 0 ? L.Get("Automatic") : result.FaceColor,
+            opacity = result.FaceOpacity,
+            symbol = FolderFaceCatalog.Symbols.FirstOrDefault(x => x.Glyph == result.FaceSymbol).Name is { } symbolLabel ? L.CatalogLabel(symbolLabel) : null
         };
     }
 
@@ -503,8 +509,8 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         foreach (var shortcut in archive.ToList())
         {
             if (names is { Count: > 0 } && !names.Any(x => x.Equals(shortcut.Name, Names))) continue;
-            if (!File.Exists(shortcut.Archived)) { skipped.Add($"{shortcut.Name} — копии в архиве нет"); archive.Remove(shortcut); continue; }
-            if (File.Exists(shortcut.Original)) { skipped.Add($"{shortcut.Name} — на рабочем столе уже есть файл с таким именем"); continue; }
+            if (!File.Exists(shortcut.Archived)) { skipped.Add(L.F("ArchivedCopyMissing", shortcut.Name)); archive.Remove(shortcut); continue; }
+            if (File.Exists(shortcut.Original)) { skipped.Add(L.F("DesktopNameTaken", shortcut.Name)); continue; }
             File.Move(shortcut.Archived, shortcut.Original);
             ShellIntegration.NotifyShortcut(shortcut.Original, 2);
             archive.Remove(shortcut); restored.Add(shortcut.Name);
@@ -515,8 +521,8 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
 
     private object Undo()
     {
-        if (!session.CanUndo) throw new ApiException("Отменять нечего.");
+        if (!session.CanUndo) throw new ApiException(L.Get("NothingToUndo"));
         session.Undo();
-        return new { undone = true, note = "Ярлыки, убранные с рабочего стола, возвращает restore_desktop." };
+        return new { undone = true, note = L.Get("RestoreDesktopHelp") };
     }
 }

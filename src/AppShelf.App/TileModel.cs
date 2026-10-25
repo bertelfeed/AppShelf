@@ -9,8 +9,8 @@ public sealed class TileModel : INotifyPropertyChanged
 {
     public ShelfItem Item { get; }
     public string Name => Item.Name;
-    public string Description => Item.IsFolder ? Russian.Elements(Item.Children.Count) + " · папка"
-        : Missing ? "Не найдено — программу удалили или переместили. Свойства… — указать заново" : Item.Target;
+    public string Description => Item.IsFolder ? Russian.Elements(Item.Children.Count) + L.Get("FolderSuffix")
+        : Missing ? L.Get("MissingApplicationDescription") : Item.Target;
     /// <summary>The program could not be found even after an automatic search; the tile is drawn faded.</summary>
     public bool Missing { get; }
     public double IconOpacity => Missing ? .4 : 1;

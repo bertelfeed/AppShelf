@@ -1,0 +1,793 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="MissingApplicationHelp">
+    <value>“{0}” was not found: {1}
+The application was removed or moved. Right-click it in AppShelf and choose Properties… to update its location.</value>
+  </data>
+  <data xml:space="preserve" name="AFolderCannotBeMovedIntoItselfOrOneOfItsSubfolders">
+    <value>A folder cannot be moved into itself or one of its subfolders.</value>
+  </data>
+  <data xml:space="preserve" name="AI">
+    <value>AI</value>
+  </data>
+  <data xml:space="preserve" name="Add">
+    <value>Add</value>
+  </data>
+  <data xml:space="preserve" name="Add0">
+    <value>Add ({0})</value>
+  </data>
+  <data xml:space="preserve" name="AddAnAppOrFolder">
+    <value>Add an app or folder</value>
+  </data>
+  <data xml:space="preserve" name="AddApps">
+    <value>Add apps</value>
+  </data>
+  <data xml:space="preserve" name="AddAppsOrDropShortcutsHereToKeepThemCloseAtHand">
+    <value>Add apps or drop shortcuts here to keep them close at hand.</value>
+  </data>
+  <data xml:space="preserve" name="AddAppsShortcutsOrFiles">
+    <value>Add apps, shortcuts or files</value>
+  </data>
+  <data xml:space="preserve" name="AddToDesktop">
+    <value>Add to desktop</value>
+  </data>
+  <data xml:space="preserve" name="EmptyFolderHelp">
+    <value>Add Windows apps or drop shortcuts here. Folders can contain other folders.</value>
+  </data>
+  <data xml:space="preserve" name="AllFolders">
+    <value>All folders</value>
+  </data>
+  <data xml:space="preserve" name="InvalidApplicationChildren">
+    <value>An app must have a launch target and cannot contain child items.</value>
+  </data>
+  <data xml:space="preserve" name="AppIcons">
+    <value>App icons</value>
+  </data>
+  <data xml:space="preserve" name="AppProperties">
+    <value>App properties</value>
+  </data>
+  <data xml:space="preserve" name="AppSettings">
+    <value>App settings</value>
+  </data>
+  <data xml:space="preserve" name="AppShelfAppFolders">
+    <value>AppShelf — app folders</value>
+  </data>
+  <data xml:space="preserve" name="AppShelfFolder">
+    <value>AppShelf — folder</value>
+  </data>
+  <data xml:space="preserve" name="ExportFileFilter">
+    <value>AppShelf folders|*.appshelf.json</value>
+  </data>
+  <data xml:space="preserve" name="ImportFileFilter">
+    <value>AppShelf folders|*.json</value>
+  </data>
+  <data xml:space="preserve" name="AppShelfSettings">
+    <value>AppShelf settings</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationFileOrLink">
+    <value>Application, file or link</value>
+  </data>
+  <data xml:space="preserve" name="Apps">
+    <value>Apps</value>
+  </data>
+  <data xml:space="preserve" name="AppsAdded0">
+    <value>Apps added: {0}</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationFileFilter">
+    <value>Apps and shortcuts|*.exe;*.lnk;*.url|All files|*.*</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationShortcutFilter">
+    <value>Apps and shortcuts|*.exe;*.lnk;*.url;*.appref-ms|All files|*.*</value>
+  </data>
+  <data xml:space="preserve" name="AppsFound0">
+    <value>Apps found: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Automatic">
+    <value>Automatic</value>
+  </data>
+  <data xml:space="preserve" name="Back">
+    <value>Back: </value>
+  </data>
+  <data xml:space="preserve" name="BackAltLeft">
+    <value>Back (Alt+Left)</value>
+  </data>
+  <data xml:space="preserve" name="BackgroundOpacity">
+    <value>Background opacity</value>
+  </data>
+  <data xml:space="preserve" name="Backups">
+    <value>Backups</value>
+  </data>
+  <data xml:space="preserve" name="Blue">
+    <value>Blue</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Cancel</value>
+  </data>
+  <data xml:space="preserve" name="ChooseFile">
+    <value>Choose file…</value>
+  </data>
+  <data xml:space="preserve" name="ChooseFiles">
+    <value>Choose files…</value>
+  </data>
+  <data xml:space="preserve" name="ChooseIcon">
+    <value>Choose icon…</value>
+  </data>
+  <data xml:space="preserve" name="ChooseImage">
+    <value>Choose image…</value>
+  </data>
+  <data xml:space="preserve" name="ChooseTheAppsToIncludeInThisFolder">
+    <value>Choose the apps to include in this folder.</value>
+  </data>
+  <data xml:space="preserve" name="ChooseTheInterfaceLanguage">
+    <value>Choose the interface language</value>
+  </data>
+  <data xml:space="preserve" name="CloseTitleHelp">
+    <value>Click the title or press Esc to close</value>
+  </data>
+  <data xml:space="preserve" name="BackTitleHelp">
+    <value>Click the title to go back · Esc to close</value>
+  </data>
+  <data xml:space="preserve" name="CloseAfterLaunchingAnApp">
+    <value>Close after launching an app</value>
+  </data>
+  <data xml:space="preserve" name="CloseOnOutsideClickOrWindowSwitch">
+    <value>Close on outside click or window switch</value>
+  </data>
+  <data xml:space="preserve" name="Cloud">
+    <value>Cloud</value>
+  </data>
+  <data xml:space="preserve" name="Code">
+    <value>Code</value>
+  </data>
+  <data xml:space="preserve" name="Columns">
+    <value>Columns</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotDetermineTheApplicationPath">
+    <value>Could not determine the application path.</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotFindAnAvailableShortcutName">
+    <value>Could not find an available shortcut name.</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotLoadTheList">
+    <value>Could not load the list: </value>
+  </data>
+  <data xml:space="preserve" name="CouldNotOpenAppShelf">
+    <value>Could not open AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="CreateFolder">
+    <value>Create folder</value>
+  </data>
+  <data xml:space="preserve" name="CustomIconOptional">
+    <value>Custom icon (optional)</value>
+  </data>
+  <data xml:space="preserve" name="Cyan">
+    <value>Cyan</value>
+  </data>
+  <data xml:space="preserve" name="Dark">
+    <value>Dark</value>
+  </data>
+  <data xml:space="preserve" name="Desktop">
+    <value>Desktop</value>
+  </data>
+  <data xml:space="preserve" name="Documents">
+    <value>Documents</value>
+  </data>
+  <data xml:space="preserve" name="Done">
+    <value>Done</value>
+  </data>
+  <data xml:space="preserve" name="Drawing">
+    <value>Drawing</value>
+  </data>
+  <data xml:space="preserve" name="DropAnAppOntoAnotherAppToCreateAFolder">
+    <value>Drop an app onto another app to create a folder</value>
+  </data>
+  <data xml:space="preserve" name="EditorTheme">
+    <value>Editor theme</value>
+  </data>
+  <data xml:space="preserve" name="ExportAllFolders">
+    <value>Export all folders…</value>
+  </data>
+  <data xml:space="preserve" name="FOLDERS">
+    <value>FOLDERS</value>
+  </data>
+  <data xml:space="preserve" name="Favorites">
+    <value>Favorites</value>
+  </data>
+  <data xml:space="preserve" name="FolderSuffix">
+    <value> · folder</value>
+  </data>
+  <data xml:space="preserve" name="Folder">
+    <value>Folder</value>
+  </data>
+  <data xml:space="preserve" name="FolderActions">
+    <value>Folder actions</value>
+  </data>
+  <data xml:space="preserve" name="FolderAddedToDesktop">
+    <value>Folder added to desktop</value>
+  </data>
+  <data xml:space="preserve" name="FolderAddedToDesktop2">
+    <value>Folder added to desktop.</value>
+  </data>
+  <data xml:space="preserve" name="FolderIcon">
+    <value>Folder icon</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconImage">
+    <value>Folder icon image</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconPreview">
+    <value>Folder icon preview</value>
+  </data>
+  <data xml:space="preserve" name="FolderMenuPreview">
+    <value>Folder menu preview</value>
+  </data>
+  <data xml:space="preserve" name="FolderNotFound">
+    <value>Folder not found.</value>
+  </data>
+  <data xml:space="preserve" name="FolderRemovedFromDesktop">
+    <value>Folder removed from desktop.</value>
+  </data>
+  <data xml:space="preserve" name="FolderSettings">
+    <value>Folder settings</value>
+  </data>
+  <data xml:space="preserve" name="FolderSettings2">
+    <value>Folder settings…</value>
+  </data>
+  <data xml:space="preserve" name="FollowWindows">
+    <value>Follow Windows</value>
+  </data>
+  <data xml:space="preserve" name="PagingHelp">
+    <value>For more apps, turn the wheel, press PageUp/PageDown or use the dots on the right.</value>
+  </data>
+  <data xml:space="preserve" name="Games">
+    <value>Games</value>
+  </data>
+  <data xml:space="preserve" name="Graphite">
+    <value>Graphite</value>
+  </data>
+  <data xml:space="preserve" name="Gray">
+    <value>Gray</value>
+  </data>
+  <data xml:space="preserve" name="Green">
+    <value>Green</value>
+  </data>
+  <data xml:space="preserve" name="Heart">
+    <value>Heart</value>
+  </data>
+  <data xml:space="preserve" name="Home">
+    <value>Home</value>
+  </data>
+  <data xml:space="preserve" name="IconScaleDesktop">
+    <value>Icon scale · desktop</value>
+  </data>
+  <data xml:space="preserve" name="IconScaleTaskbar">
+    <value>Icon scale · taskbar</value>
+  </data>
+  <data xml:space="preserve" name="SurfaceScaleHelp">
+    <value>Icon size inside the open folder. Desktop and taskbar scales are independent.</value>
+  </data>
+  <data xml:space="preserve" name="IconFileFilter">
+    <value>Icons and images|*.ico;*.png;*.jpg;*.exe|All files|*.*</value>
+  </data>
+  <data xml:space="preserve" name="Ideas">
+    <value>Ideas</value>
+  </data>
+  <data xml:space="preserve" name="Image">
+    <value>Image</value>
+  </data>
+  <data xml:space="preserve" name="ImageFileFilter">
+    <value>Images|*.png;*.jpg;*.jpeg;*.bmp;*.ico</value>
+  </data>
+  <data xml:space="preserve" name="ImportFolders">
+    <value>Import folders…</value>
+  </data>
+  <data xml:space="preserve" name="InAppShelf">
+    <value>” in AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="Internet">
+    <value>Internet</value>
+  </data>
+  <data xml:space="preserve" name="InvalidFolderList">
+    <value>Invalid folder list.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidFolderSettings">
+    <value>Invalid folder settings.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidItem">
+    <value>Invalid item.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidOrDuplicateIdentifiers">
+    <value>Invalid or duplicate identifiers.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidSettings">
+    <value>Invalid settings.</value>
+  </data>
+  <data xml:space="preserve" name="ItemNotFound">
+    <value>Item not found.</value>
+  </data>
+  <data xml:space="preserve" name="ItemRemovedPressCtrlZToUndo">
+    <value>Item removed. Press Ctrl+Z to undo.</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Language</value>
+  </data>
+  <data xml:space="preserve" name="Launch0Apps">
+    <value>Launch {0} apps?</value>
+  </data>
+  <data xml:space="preserve" name="LaunchAll">
+    <value>Launch all</value>
+  </data>
+  <data xml:space="preserve" name="LaunchAllAppsInThisFolder">
+    <value>Launch all apps in this folder</value>
+  </data>
+  <data xml:space="preserve" name="LaunchAppShelfExeDirectlyToUseShortcuts">
+    <value>Launch AppShelf.exe directly to use shortcuts.</value>
+  </data>
+  <data xml:space="preserve" name="LaunchArguments">
+    <value>Launch arguments</value>
+  </data>
+  <data xml:space="preserve" name="Light">
+    <value>Light</value>
+  </data>
+  <data xml:space="preserve" name="LinkOrCommand">
+    <value>Link or command…</value>
+  </data>
+  <data xml:space="preserve" name="LoadingWindowsApps">
+    <value>Loading Windows apps…</value>
+  </data>
+  <data xml:space="preserve" name="Magenta">
+    <value>Magenta</value>
+  </data>
+  <data xml:space="preserve" name="Mail">
+    <value>Mail</value>
+  </data>
+  <data xml:space="preserve" name="MenuTheme">
+    <value>Menu theme</value>
+  </data>
+  <data xml:space="preserve" name="Messages">
+    <value>Messages</value>
+  </data>
+  <data xml:space="preserve" name="Move">
+    <value>Move</value>
+  </data>
+  <data xml:space="preserve" name="Move2">
+    <value>Move…</value>
+  </data>
+  <data xml:space="preserve" name="MoveToFolder">
+    <value>Move to folder</value>
+  </data>
+  <data xml:space="preserve" name="Music">
+    <value>Music</value>
+  </data>
+  <data xml:space="preserve" name="MyFolders">
+    <value>My folders</value>
+  </data>
+  <data xml:space="preserve" name="Name">
+    <value>Name</value>
+  </data>
+  <data xml:space="preserve" name="NewApp">
+    <value>New app</value>
+  </data>
+  <data xml:space="preserve" name="NewFolder">
+    <value>New folder</value>
+  </data>
+  <data xml:space="preserve" name="NoImageSelected">
+    <value>No image selected</value>
+  </data>
+  <data xml:space="preserve" name="NoResultsFound">
+    <value>No results found</value>
+  </data>
+  <data xml:space="preserve" name="NotFound">
+    <value> — not found</value>
+  </data>
+  <data xml:space="preserve" name="MissingApplicationDescription">
+    <value>Not found — the app was removed or moved. Choose Properties… to update its location.</value>
+  </data>
+  <data xml:space="preserve" name="Opacity">
+    <value>Opacity</value>
+  </data>
+  <data xml:space="preserve" name="Open">
+    <value>Open</value>
+  </data>
+  <data xml:space="preserve" name="OpenAppShelf">
+    <value>Open AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="OpenCompactMenu">
+    <value>Open compact menu</value>
+  </data>
+  <data xml:space="preserve" name="OpenFolder">
+    <value>Open folder</value>
+  </data>
+  <data xml:space="preserve" name="OpenFolder2">
+    <value>Open folder “</value>
+  </data>
+  <data xml:space="preserve" name="OpenSettingsDirectory">
+    <value>Open settings directory</value>
+  </data>
+  <data xml:space="preserve" name="OpenTaskbarMenu">
+    <value>Open taskbar menu</value>
+  </data>
+  <data xml:space="preserve" name="Orange">
+    <value>Orange</value>
+  </data>
+  <data xml:space="preserve" name="OrganizeYourAppsIntoFolders">
+    <value>Organize your apps into folders</value>
+  </data>
+  <data xml:space="preserve" name="Page0Of1">
+    <value>Page {0} of {1}</value>
+  </data>
+  <data xml:space="preserve" name="People">
+    <value>People</value>
+  </data>
+  <data xml:space="preserve" name="Photos">
+    <value>Photos</value>
+  </data>
+  <data xml:space="preserve" name="Place">
+    <value>Place</value>
+  </data>
+  <data xml:space="preserve" name="PlaceFolder">
+    <value>Place folder</value>
+  </data>
+  <data xml:space="preserve" name="Properties">
+    <value>Properties…</value>
+  </data>
+  <data xml:space="preserve" name="Purple">
+    <value>Purple</value>
+  </data>
+  <data xml:space="preserve" name="Quit">
+    <value>Quit</value>
+  </data>
+  <data xml:space="preserve" name="QuitAppShelf">
+    <value>Quit AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="Red">
+    <value>Red</value>
+  </data>
+  <data xml:space="preserve" name="RefreshIconsHelp">
+    <value>Refresh after an app update if a folder still shows its old icon. Icons also refresh automatically each week.</value>
+  </data>
+  <data xml:space="preserve" name="RefreshIcons">
+    <value>Refresh icons</value>
+  </data>
+  <data xml:space="preserve" name="RefreshStarted">
+    <value>Refresh started</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFolder">
+    <value>Remove folder “</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFromAppShelf">
+    <value>Remove from AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFromDesktop">
+    <value>Remove from desktop</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFromTaskbar">
+    <value>Remove from taskbar</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFolderConfirmation">
+    <value>Remove this folder and its contents from AppShelf? Applications and files will remain on your computer.</value>
+  </data>
+  <data xml:space="preserve" name="Rename">
+    <value>Rename</value>
+  </data>
+  <data xml:space="preserve" name="Rename2">
+    <value>Rename…</value>
+  </data>
+  <data xml:space="preserve" name="Results0">
+    <value>Results: {0}</value>
+  </data>
+  <data xml:space="preserve" name="RowsPerPage">
+    <value>Rows per page</value>
+  </data>
+  <data xml:space="preserve" name="RunAsAdministrator">
+    <value>Run as administrator</value>
+  </data>
+  <data xml:space="preserve" name="RunAsAdministrator2">
+    <value>Run as administrator</value>
+  </data>
+  <data xml:space="preserve" name="RussianLanguageName">
+    <value>Русский</value>
+  </data>
+  <data xml:space="preserve" name="Save">
+    <value>Save</value>
+  </data>
+  <data xml:space="preserve" name="Search">
+    <value>Search</value>
+  </data>
+  <data xml:space="preserve" name="SearchAppsAndFolders">
+    <value>Search apps and folders</value>
+  </data>
+  <data xml:space="preserve" name="SearchInstalledApps">
+    <value>Search installed apps</value>
+  </data>
+  <data xml:space="preserve" name="Security">
+    <value>Security</value>
+  </data>
+  <data xml:space="preserve" name="Selected0">
+    <value>Selected: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Settings">
+    <value>Settings</value>
+  </data>
+  <data xml:space="preserve" name="Settings2">
+    <value>Settings</value>
+  </data>
+  <data xml:space="preserve" name="SettingsAreDamagedTheOriginalFileWasPreserved">
+    <value>Settings are damaged. The original file was preserved: </value>
+  </data>
+  <data xml:space="preserve" name="SettingsForThisFolder">
+    <value>Settings for this folder</value>
+  </data>
+  <data xml:space="preserve" name="SettingsRecovered">
+    <value>Settings were restored from a backup. The damaged file was preserved in the same directory.</value>
+  </data>
+  <data xml:space="preserve" name="ShortcutsAndFiles">
+    <value>Shortcuts and files…</value>
+  </data>
+  <data xml:space="preserve" name="ShowIconLabels">
+    <value>Show icon labels</value>
+  </data>
+  <data xml:space="preserve" name="ShowOnTaskbar">
+    <value>Show on taskbar</value>
+  </data>
+  <data xml:space="preserve" name="ShowThisFolderOnTheDesktopTaskbarOrBoth">
+    <value>Show this folder on the desktop, taskbar or both.</value>
+  </data>
+  <data xml:space="preserve" name="SortByName">
+    <value>Sort by name</value>
+  </data>
+  <data xml:space="preserve" name="StartAppShelfWhenISignInToWindows">
+    <value>Start AppShelf when I sign in to Windows</value>
+  </data>
+  <data xml:space="preserve" name="StartMenu0">
+    <value>Start menu: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Store">
+    <value>Store</value>
+  </data>
+  <data xml:space="preserve" name="Study">
+    <value>Study</value>
+  </data>
+  <data xml:space="preserve" name="SupportedFormatsPNGJPGBMPAndICO">
+    <value>Supported formats: PNG, JPG, BMP and ICO.</value>
+  </data>
+  <data xml:space="preserve" name="Symbol">
+    <value>Symbol</value>
+  </data>
+  <data xml:space="preserve" name="Taskbar">
+    <value>Taskbar</value>
+  </data>
+  <data xml:space="preserve" name="TaskbarAndDesktop">
+    <value>Taskbar and desktop</value>
+  </data>
+  <data xml:space="preserve" name="TaskbarAndDesktop2">
+    <value>Taskbar and desktop…</value>
+  </data>
+  <data xml:space="preserve" name="BackgroundOperationHelp">
+    <value>Taskbar folder buttons and desktop single-click work while AppShelf runs in the background. Closing the editor hides it; quit from the notification-area icon.</value>
+  </data>
+  <data xml:space="preserve" name="TaskbarFolderButtonsAreRestoredWhenAppShelfStarts">
+    <value>Taskbar folder buttons are restored when AppShelf starts.</value>
+  </data>
+  <data xml:space="preserve" name="Teal">
+    <value>Teal</value>
+  </data>
+  <data xml:space="preserve" name="TheFileExceeds16MB">
+    <value>The file exceeds 16 MB.</value>
+  </data>
+  <data xml:space="preserve" name="TheFolderWasDeleted">
+    <value>The folder was deleted.</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconUpdateHelp">
+    <value>The icon shows the folder's contents and updates automatically.</value>
+  </data>
+  <data xml:space="preserve" name="TheImageIsLargerThan20MB">
+    <value>The image is larger than 20 MB.</value>
+  </data>
+  <data xml:space="preserve" name="TheNestingLimitOf32LevelsWasExceeded">
+    <value>The nesting limit of 32 levels was exceeded.</value>
+  </data>
+  <data xml:space="preserve" name="TheNestingLimitWasExceeded">
+    <value>The nesting limit was exceeded.</value>
+  </data>
+  <data xml:space="preserve" name="TheSettingsFileIsEmpty">
+    <value>The settings file is empty.</value>
+  </data>
+  <data xml:space="preserve" name="TheShortcutMustBeInsideTheSelectedDirectory">
+    <value>The shortcut must be inside the selected directory.</value>
+  </data>
+  <data xml:space="preserve" name="TheseSettingsApplyOnlyToThisFolder">
+    <value>These settings apply only to this folder.</value>
+  </data>
+  <data xml:space="preserve" name="ThisFileFormatVersionIsNotSupportedYet">
+    <value>This file format version is not supported yet.</value>
+  </data>
+  <data xml:space="preserve" name="ThisFolderIsEmpty">
+    <value>This folder is empty</value>
+  </data>
+  <data xml:space="preserve" name="ThisFolderIsEmptyAddAppsToPreviewItsMenu">
+    <value>This folder is empty — add apps to preview its menu.</value>
+  </data>
+  <data xml:space="preserve" name="DeletedFolderShortcutHelp">
+    <value>This folder was deleted. Create a new shortcut for an existing folder.</value>
+  </data>
+  <data xml:space="preserve" name="ThisShortcutBelongsToAnotherApplication">
+    <value>This shortcut belongs to another application.</value>
+  </data>
+  <data xml:space="preserve" name="Tools">
+    <value>Tools</value>
+  </data>
+  <data xml:space="preserve" name="TryADifferentName">
+    <value>Try a different name.</value>
+  </data>
+  <data xml:space="preserve" name="UndoLastChange">
+    <value>Undo last change</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconHelp">
+    <value>Used on the desktop, taskbar and inside other folders. For a colour emoji, use an image.</value>
+  </data>
+  <data xml:space="preserve" name="Video">
+    <value>Video</value>
+  </data>
+  <data xml:space="preserve" name="WhereWouldYouLikeToMoveIt">
+    <value>Where would you like to move it?</value>
+  </data>
+  <data xml:space="preserve" name="White">
+    <value>White</value>
+  </data>
+  <data xml:space="preserve" name="WindowsApps">
+    <value>Windows apps…</value>
+  </data>
+  <data xml:space="preserve" name="Work">
+    <value>Work</value>
+  </data>
+  <data xml:space="preserve" name="WorkingDirectoryOptional">
+    <value>Working directory (optional)</value>
+  </data>
+  <data xml:space="preserve" name="Yellow">
+    <value>Yellow</value>
+  </data>
+  <data xml:space="preserve" name="YouCanSelectFilesManually">
+    <value>. You can select files manually.</value>
+  </data>
+  <data xml:space="preserve" name="YourAppsInYourOwnOrder">
+    <value>Your apps. In your own order.</value>
+  </data>
+  <data xml:space="preserve" name="YourFolderWillAppearHere">
+    <value>Your folder will appear here</value>
+  </data>
+  <data xml:space="preserve" name="ItemsOne">
+    <value>{0} item</value>
+  </data>
+  <data xml:space="preserve" name="ItemsFew">
+    <value>{0} items</value>
+  </data>
+  <data xml:space="preserve" name="ItemsMany">
+    <value>{0} items</value>
+  </data>
+  <data xml:space="preserve" name="UnknownTool">
+    <value>Unknown tool: {0}</value>
+  </data>
+  <data xml:space="preserve" name="MissingParameter">
+    <value>Missing parameter: {0}.</value>
+  </data>
+  <data xml:space="preserve" name="GroupsRequired">
+    <value>A non-empty groups list is required.</value>
+  </data>
+  <data xml:space="preserve" name="FolderItemsRequired">
+    <value>No items were specified for folder “{0}”.</value>
+  </data>
+  <data xml:space="preserve" name="FolderIconIsNotAnApp">
+    <value>“{0}” is an AppShelf folder icon, not an app.</value>
+  </data>
+  <data xml:space="preserve" name="MissingItemsNoChanges">
+    <value>No changes were made because some items were not found. </value>
+  </data>
+  <data xml:space="preserve" name="AlreadyInFolder">
+    <value>{0} — already in “{1}”</value>
+  </data>
+  <data xml:space="preserve" name="NotOnDesktopKept">
+    <value>{0} — outside the desktop; left in its original location</value>
+  </data>
+  <data xml:space="preserve" name="SharedShortcutKept">
+    <value>{0} — shared shortcut; administrator permissions are required to remove it</value>
+  </data>
+  <data xml:space="preserve" name="NonShortcutKept">
+    <value>{0} — not a shortcut; files and folders are left in place</value>
+  </data>
+  <data xml:space="preserve" name="OrganizeUndoHelp">
+    <value>Use undo to revert folder changes; use restore_desktop to return shortcuts to the desktop.</value>
+  </data>
+  <data xml:space="preserve" name="FolderNameRequired">
+    <value>A folder name is required.</value>
+  </data>
+  <data xml:space="preserve" name="AmbiguousFolder">
+    <value>Multiple folders match “{0}”: {1}. Specify a path separated by “/”.</value>
+  </data>
+  <data xml:space="preserve" name="NamedFolderNotFound">
+    <value>Folder “{0}” was not found.</value>
+  </data>
+  <data xml:space="preserve" name="FolderNameTooLong">
+    <value>The folder name is too long.</value>
+  </data>
+  <data xml:space="preserve" name="ItemRequired">
+    <value>An item is required.</value>
+  </data>
+  <data xml:space="preserve" name="NamedItemNotFound">
+    <value>“{0}” was not found in AppShelf.</value>
+  </data>
+  <data xml:space="preserve" name="AmbiguousItem">
+    <value>Multiple items match “{0}”: {1}. Specify a path separated by “/”.</value>
+  </data>
+  <data xml:space="preserve" name="TopLevel">
+    <value>top level</value>
+  </data>
+  <data xml:space="preserve" name="NewNameLength">
+    <value>The new name must contain 1 to 200 characters.</value>
+  </data>
+  <data xml:space="preserve" name="RemoveItemHelp">
+    <value>Programs and files on disk are unchanged. Use undo to restore the item and place_folder to restore its desktop icon.</value>
+  </data>
+  <data xml:space="preserve" name="PlacementRequired">
+    <value>Specify desktop and/or taskbar.</value>
+  </data>
+  <data xml:space="preserve" name="OpacityRange">
+    <value>opacity must be between 5 and 100.</value>
+  </data>
+  <data xml:space="preserve" name="UnknownColor">
+    <value>Unknown color: {0}. Available: {1}</value>
+  </data>
+  <data xml:space="preserve" name="LookValues">
+    <value>look must be apps, symbol or picture.</value>
+  </data>
+  <data xml:space="preserve" name="UnknownSymbol">
+    <value>Unknown symbol: {0}. Available: {1}</value>
+  </data>
+  <data xml:space="preserve" name="SymbolRequired">
+    <value>Specify symbol when look=symbol.</value>
+  </data>
+  <data xml:space="preserve" name="PictureRequired">
+    <value>Specify the path to an existing image when look=picture.</value>
+  </data>
+  <data xml:space="preserve" name="ArchivedCopyMissing">
+    <value>{0} — archived copy is missing</value>
+  </data>
+  <data xml:space="preserve" name="DesktopNameTaken">
+    <value>{0} — a file with this name already exists on the desktop</value>
+  </data>
+  <data xml:space="preserve" name="NothingToUndo">
+    <value>There is nothing to undo.</value>
+  </data>
+  <data xml:space="preserve" name="RestoreDesktopHelp">
+    <value>Use restore_desktop to return archived shortcuts to the desktop.</value>
+  </data>
+  <data xml:space="preserve" name="ConnectionClosed">
+    <value>AppShelf closed the connection without replying.</value>
+  </data>
+  <data xml:space="preserve" name="EmptyReply">
+    <value>AppShelf returned an empty reply.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidRequestSize">
+    <value>The request is empty or too large.</value>
+  </data>
+  <data xml:space="preserve" name="InvalidRequest">
+    <value>Invalid request: {0}</value>
+  </data>
+  <data xml:space="preserve" name="AppNotResponding">
+    <value>AppShelf is not responding: {0}</value>
+  </data>
+  <data xml:space="preserve" name="ResidentExecutableMissing">
+    <value>AppShelf is not running, and AppShelf.exe was not found beside the MCP server.</value>
+  </data>
+</root>

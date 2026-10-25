@@ -43,6 +43,9 @@ public partial class App : Application
             }
             ShellIntegration.Initialize();
             Session = new ShelfSession(directory);
+            ApplyLanguage();
+            // Language is applied before the other subscribers rebuild menus and taskbar tooltips.
+            Session.Changed += OnChanged;
             // Shortcuts that their apps rewrote since the last run: refresh AppShelf's copies before icons are read.
             foreach (var item in ShelfTree.Walk(Session.Configuration.Items)) ShellIntegration.RefreshShortcutCopy(item);
             Theme.Apply(Session.Configuration.Appearance);
@@ -57,7 +60,6 @@ public partial class App : Application
             TaskbarFolders = new TaskbarFolders(Session);
             try { DesktopClicks = new DesktopSingleClick(Session.Store.DirectoryPath, id => ShowFolder(id, true, toggle: true)) { Error = Log }; }
             catch (Exception ex) { Log(ex); }
-            Session.Changed += OnChanged;
             SystemEvents.UserPreferenceChanged += PreferenceChanged;
             tray = new TrayIcon(() => ShowEditor(), BuildTrayMenu);
             _ = instance.ListenAsync(message => Dispatcher.InvokeAsync(() => HandleCommand(message)));
@@ -67,7 +69,7 @@ public partial class App : Application
             HandleCommand(command);
             if (Session.Store.RecoveryMessage is { } recovery) MessageBox.Show(recovery, "AppShelf", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        catch (Exception ex) { MessageBox.Show(ex.Message, "Не удалось открыть AppShelf", MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(1); }
+        catch (Exception ex) { MessageBox.Show(ex.Message, L.Get("CouldNotOpenAppShelf"), MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(1); }
     }
 
     private static string? Argument(string[] args, string key)
@@ -102,7 +104,7 @@ public partial class App : Application
     public void ShowFolder(Guid id, bool fromDesktop = false, bool toggle = false)
     {
         if (ShelfTree.Find(Session.Configuration, id) is not { IsFolder: true })
-        { MessageBox.Show("Эта папка была удалена. Создайте новый ярлык для существующей папки.", "AppShelf"); return; }
+        { MessageBox.Show(L.Get("DeletedFolderShortcutHelp"), "AppShelf"); return; }
         toggle |= !fromDesktop;
         if (popup is { IsVisible: true } && popup.RootFolderId == id && popup.OpenedFromDesktop == fromDesktop)
         {
@@ -133,15 +135,21 @@ public partial class App : Application
             var item = new System.Windows.Controls.MenuItem { Header = text };
             item.Click += (_, _) => action(); menu.Items.Add(item);
         }
-        Add("Открыть AppShelf", () => ShowEditor());
+        Add(L.Get("OpenAppShelf"), () => ShowEditor());
         foreach (var folder in Session.Configuration.Items.Where(x => x.IsFolder).Take(15))
         { var id = folder.Id; Add(folder.Name, () => ShowFolder(id)); }
         menu.Items.Add(new System.Windows.Controls.Separator());
-        Add("Завершить работу", Quit);
+        Add(L.Get("Quit"), Quit);
         return menu;
     }
 
-    private void OnChanged() => RefreshTheme();
+    private void OnChanged() { ApplyLanguage(); RefreshTheme(); }
+    public void ApplyLanguage()
+    {
+        L.SetLanguage(Session.Configuration.Language);
+        foreach (var (key, value) in L.Strings()) Resources["Text." + key] = value;
+        tray?.RefreshLanguage();
+    }
     private void PreferenceChanged(object sender, UserPreferenceChangedEventArgs e) => Dispatcher.InvokeAsync(RefreshTheme);
     private void RefreshTheme() { Theme.Apply(Session.Configuration.Appearance); editor?.RefreshBackdrop(); popup?.RefreshTheme(); }
 

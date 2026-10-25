@@ -24,7 +24,7 @@ public sealed class FolderPublisher : IDisposable
         (await LinksAsync([Desktop])).FirstOrDefault(link => ShellIntegration.IsFolderShortcut(link, id, session.Store.DirectoryPath))?.Path;
     public async Task<string> AddDesktopAsync(Guid id)
     {
-        var folder = ShelfTree.Find(session.Configuration, id) ?? throw new InvalidOperationException("Папка удалена.");
+        var folder = ShelfTree.Find(session.Configuration, id) ?? throw new InvalidOperationException(L.Get("TheFolderWasDeleted"));
         var art = await FolderIconWriter.PrepareAsync(folder);
         var existing = await DesktopShortcutAsync(id);
         return await ShellIntegration.RunSta(() => ShellIntegration.CreateFolderShortcut(folder, Desktop, session.Store.DirectoryPath,
@@ -44,7 +44,7 @@ public sealed class FolderPublisher : IDisposable
     }
     public async Task<string> EnsureTaskbarEntryAsync(Guid id)
     {
-        var folder = ShelfTree.Find(session.Configuration, id) ?? throw new InvalidOperationException("Папка удалена.");
+        var folder = ShelfTree.Find(session.Configuration, id) ?? throw new InvalidOperationException(L.Get("TheFolderWasDeleted"));
         var art = await FolderIconWriter.PrepareAsync(folder);
         var existing = (await LinksAsync([Programs])).FirstOrDefault(link => ShellIntegration.IsFolderShortcut(link, id, session.Store.DirectoryPath))?.Path;
         return await ShellIntegration.RunSta(() => ShellIntegration.CreateFolderShortcut(folder, Programs, session.Store.DirectoryPath,
@@ -89,15 +89,16 @@ public sealed class FolderPublisher : IDisposable
                 var art = await FolderIconWriter.PrepareAsync(folder);
                 foreach (var link in owned)
                 {
-                    var signature = folder.Name + "|" + art.Path;
+                    var signature = folder.Name + "|" + art.Path + "|" + L.Language;
                     if (signatures.GetValueOrDefault(link.Path) == signature) continue;
                     try
                     {
                         var surface = link.Arguments.Contains("--surface desktop", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(Path.GetDirectoryName(link.Path), Desktop, StringComparison.OrdinalIgnoreCase) ? "desktop" : "taskbar";
-                        await ShellIntegration.RunSta(() => ShellIntegration.CreateFolderShortcut(folder, Path.GetDirectoryName(link.Path)!,
-                            session.Store.DirectoryPath, art.Path, surface, link.Path));
-                        signatures[link.Path] = signature;
+                        var path = RenameOnDesktop(link.Path, folder);
+                        await ShellIntegration.RunSta(() => ShellIntegration.CreateFolderShortcut(folder, Path.GetDirectoryName(path)!,
+                            session.Store.DirectoryPath, art.Path, surface, path));
+                        signatures[path] = signature;
                     }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException)
                     { Log(ex); }
@@ -106,6 +107,21 @@ public sealed class FolderPublisher : IDisposable
         }
         catch (Exception ex) { Log(ex); }
         finally { syncing = false; if (pending) RequestRefresh(); }
+    }
+    /// <summary>
+    /// Explorer labels a desktop shortcut by its file name, so a renamed folder renames its desktop shortcut too.
+    /// A name taken by another file keeps the old shortcut name.
+    /// </summary>
+    private string RenameOnDesktop(string path, ShelfItem folder)
+    {
+        if (!string.Equals(Path.GetDirectoryName(path), Desktop, StringComparison.OrdinalIgnoreCase)) return path;
+        var wanted = Path.Combine(Desktop, ShellIntegration.FolderShortcutName(folder) + ".lnk");
+        if (string.Equals(path, wanted, StringComparison.Ordinal)) return path;
+        if (File.Exists(wanted) && !string.Equals(path, wanted, StringComparison.OrdinalIgnoreCase)) return path;
+        File.Move(path, wanted);
+        ShellIntegration.NotifyShortcut(path, 4); ShellIntegration.NotifyShortcut(wanted, 2);
+        signatures.Remove(path);
+        return wanted;
     }
     private void Log(Exception ex)
     { try { File.AppendAllText(Path.Combine(session.Store.DirectoryPath, "errors.log"), $"{DateTimeOffset.Now:O} Shortcut refresh: {ex.Message}\n"); } catch { } }

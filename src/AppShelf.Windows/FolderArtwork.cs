@@ -23,6 +23,10 @@ public static class FolderArtwork
     public static BitmapSource Render(IReadOnlyList<ImageSource?> apps, int pixels, Brush? background = null, Pen? border = null, FolderLook? look = null)
     {
         var drawing = new DrawingVisual();
+        // App icons (64–256 px) are shrunk to a quarter of the folder icon; the default low-quality filter
+        // makes them jagged, so the composite is drawn with the high-quality (mipmapped) filter.
+        RenderOptions.SetBitmapScalingMode(drawing, BitmapScalingMode.HighQuality);
+        RenderOptions.SetEdgeMode(drawing, EdgeMode.Unspecified);
         using (var dc = drawing.RenderOpen())
         {
             dc.PushTransform(new ScaleTransform(pixels / 64d, pixels / 64d));
@@ -31,8 +35,9 @@ public static class FolderArtwork
             {
                 var symbol = look?.Symbol is { Length: > 0 } glyph ? glyph : null;
                 var plate = look?.Plate ?? (symbol is null ? null : FolderLook.SymbolPlate);
-                DrawPlate(dc, background, border, plate);
-                if (symbol is not null) DrawSymbol(dc, symbol, plate!.Value, pixels / 64d);
+                var opacity = Math.Clamp(look?.Opacity ?? FolderLook.DefaultOpacity, .05, 1);
+                DrawPlate(dc, background, border, plate, opacity);
+                if (symbol is not null) DrawSymbol(dc, symbol, plate!.Value, opacity, pixels / 64d);
                 else DrawApps(dc, apps, pixels);
             }
             dc.Pop();
@@ -43,19 +48,25 @@ public static class FolderArtwork
         return bitmap;
     }
 
-    private static void DrawPlate(DrawingContext dc, Brush? background, Pen? border, Color? color)
+    /// <param name="opacity">Plate opacity chosen per folder; the rims stay, so the edge is visible even at 5 %.</param>
+    private static void DrawPlate(DrawingContext dc, Brush? background, Pen? border, Color? color, double opacity)
     {
         // Fill almost the entire icon box; the Shell sets the surrounding size/spacing.
         if (color is { } c)
         {
-            var plate = new LinearGradientBrush(Lighten(c, .14), c, 90); plate.Freeze();
+            var alpha = (byte)Math.Round(255 * opacity);
+            var plate = new LinearGradientBrush(WithAlpha(Lighten(c, .14), alpha), WithAlpha(c, alpha), 90); plate.Freeze();
             dc.DrawRoundedRectangle(null, ShellShadow, new Rect(.5, .5, 63, 63), 12.5, 12.5);
-            dc.DrawRoundedRectangle(plate, ColorRim, new Rect(1.5, 1.5, 61, 61), 11.5, 11.5);
+            dc.DrawRoundedRectangle(plate, opacity < .6 ? ShellRim : ColorRim, new Rect(1.5, 1.5, 61, 61), 11.5, 11.5);
         }
         else if (background is null)
         {
+            // The standard plate keeps its light-to-dark sheen; at the default 40 % it is the Windows 11 look.
+            var plate = Math.Abs(opacity - FolderLook.DefaultOpacity) < .001 ? ShellPlate : Frozen(new LinearGradientBrush(
+                Color.FromArgb((byte)Math.Min(255, Math.Round(255 * opacity * 1.2)), 236, 239, 244),
+                Color.FromArgb((byte)Math.Round(255 * opacity * .9), 214, 219, 227), 90));
             dc.DrawRoundedRectangle(null, ShellShadow, new Rect(.5, .5, 63, 63), 12.5, 12.5);
-            dc.DrawRoundedRectangle(ShellPlate, ShellRim, new Rect(1.5, 1.5, 61, 61), 11.5, 11.5);
+            dc.DrawRoundedRectangle(plate, ShellRim, new Rect(1.5, 1.5, 61, 61), 11.5, 11.5);
         }
         else dc.DrawRoundedRectangle(background, border ?? new Pen(new SolidColorBrush(Color.FromArgb(100, 160, 166, 177)), .7),
             new Rect(1, 1, 62, 62), 12, 12);
@@ -74,9 +85,10 @@ public static class FolderArtwork
         dc.DrawRoundedRectangle(null, ColorRim, new Rect(1.5, 1.5, 61, 61), 11.5, 11.5);
     }
 
-    private static void DrawSymbol(DrawingContext dc, string symbol, Color plate, double pixelsPerUnit)
+    private static void DrawSymbol(DrawingContext dc, string symbol, Color plate, double opacity, double pixelsPerUnit)
     {
-        var ink = Luminance(plate) > .6 ? Color.FromRgb(0x1A, 0x1A, 0x1A) : Colors.White;
+        // On a see-through plate the wallpaper decides the contrast, and white reads on most of them.
+        var ink = opacity >= .6 && Luminance(plate) > .6 ? Color.FromRgb(0x1A, 0x1A, 0x1A) : Colors.White;
         var text = new FormattedText(symbol, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
             new Typeface(SymbolFont, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal), 32, Brushes.Black, Math.Max(.1, pixelsPerUnit));
         var geometry = text.BuildGeometry(new Point(0, 0));
@@ -116,6 +128,7 @@ public static class FolderArtwork
 
     public static Color Lighten(Color color, double amount) => Color.FromArgb(color.A,
         (byte)(color.R + (255 - color.R) * amount), (byte)(color.G + (255 - color.G) * amount), (byte)(color.B + (255 - color.B) * amount));
+    private static Color WithAlpha(Color color, byte alpha) => Color.FromArgb(alpha, color.R, color.G, color.B);
     public static double Luminance(Color color) => (0.2126 * color.R + 0.7152 * color.G + 0.0722 * color.B) / 255;
 
     public static void WriteIcon(string path, IReadOnlyList<ImageSource?> apps, FolderLook? look = null)

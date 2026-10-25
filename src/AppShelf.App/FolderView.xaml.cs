@@ -14,6 +14,7 @@ public partial class FolderView : UserControl
     public bool Compact { get; set; }
     private Point dragOrigin;
     private bool dragging;
+    private string? displayLanguage;
     private ShelfSession Session => App.Current.Session;
     public FolderView() { InitializeComponent(); }
     private void OnLoaded(object sender, RoutedEventArgs e) { Session.Changed += Refresh; Refresh(); }
@@ -31,6 +32,11 @@ public partial class FolderView : UserControl
     {
         if (!IsInitialized || App.Current.Session is null) return;
         var config = Session.Configuration;
+        if (displayLanguage != L.Language)
+        {
+            displayLanguage = L.Language;
+            StatusText.SetResourceReference(TextBlock.TextProperty, "Text.DropAnAppOntoAnotherAppToCreateAFolder");
+        }
         if (FolderId is { } id && ShelfTree.Find(config, id) is not { IsFolder: true }) FolderId = null;
         var search = SearchBox.Text.Trim();
         IEnumerable<ShelfItem> items = search.Length == 0 ? ShelfTree.Container(config, FolderId)
@@ -39,18 +45,18 @@ public partial class FolderView : UserControl
         TileGrid.ItemsSource = list;
         EmptyPanel.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         TileGrid.Visibility = list.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
-        EmptyTitle.Text = search.Length > 0 ? "Ничего не найдено" : FolderId is null ? "Соберите приложения в папки" : "Папка пока пуста";
-        EmptyText.Text = search.Length > 0 ? "Попробуйте другое название." : "Добавьте приложения из Windows или перетащите сюда ярлыки. Папки можно вкладывать друг в друга.";
+        EmptyTitle.Text = search.Length > 0 ? L.Get("NoResultsFound") : FolderId is null ? L.Get("OrganizeYourAppsIntoFolders") : L.Get("ThisFolderIsEmpty");
+        EmptyText.Text = search.Length > 0 ? L.Get("TryADifferentName") : L.Get("EmptyFolderHelp");
         EmptyAdd.Visibility = search.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         SearchHint.Visibility = search.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-        FolderTitle.Text = FolderId is { } f ? ShelfTree.Find(config, f)!.Name : "Мои папки";
+        FolderTitle.Text = FolderId is { } f ? ShelfTree.Find(config, f)!.Name : L.Get("MyFolders");
         FolderTitle.FontSize = Compact ? 22 : 28;
-        FolderSubtitle.Text = search.Length > 0 ? $"Результатов: {list.Count}" : Russian.Elements(list.Count);
+        FolderSubtitle.Text = search.Length > 0 ? L.F("Results0", list.Count) : Russian.Elements(list.Count);
         BackButton.IsEnabled = FolderId is not null;
         PinButton.Visibility = FolderId is null ? Visibility.Collapsed : Visibility.Visible;
         FolderSettingsButton.Visibility = PinButton.Visibility;
         BreadcrumbPanel.Children.Clear();
-        AddCrumb("Все папки", null);
+        AddCrumb(L.Get("AllFolders"), null);
         foreach (var folder in ShelfTree.Breadcrumbs(config, FolderId))
         {
             BreadcrumbPanel.Children.Add(new TextBlock { Text = "›", Margin = new Thickness(3, 0, 3, 0), VerticalAlignment = VerticalAlignment.Center });
@@ -83,17 +89,17 @@ public partial class FolderView : UserControl
     private void AddClick(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu();
-        AddMenu(menu, "Приложения из Windows…", AddFromLibrary);
-        AddMenu(menu, "Ярлыки и файлы…", AddFiles);
-        AddMenu(menu, "Ссылка или команда…", AddCustom);
+        AddMenu(menu, L.Get("WindowsApps"), AddFromLibrary);
+        AddMenu(menu, L.Get("ShortcutsAndFiles"), AddFiles);
+        AddMenu(menu, L.Get("LinkOrCommand"), AddCustom);
         menu.Items.Add(new Separator());
-        AddMenu(menu, "Новая папка", NewFolder);
+        AddMenu(menu, L.Get("NewFolder"), NewFolder);
         OpenMenu(menu, (FrameworkElement)sender);
     }
     private void LibraryClick(object sender, RoutedEventArgs e) => AddFromLibrary();
     public void NewFolder()
     {
-        var name = NameDialog.Ask(Window.GetWindow(this), "Новая папка", "Название", "Новая папка");
+        var name = NameDialog.Ask(Window.GetWindow(this), L.Get("NewFolder"), L.Get("Name"), L.Get("NewFolder"));
         if (name is null) return;
         var folder = ShelfItem.Folder(name);
         Change(config => ShelfTree.Container(config, FolderId).Add(folder));
@@ -105,16 +111,16 @@ public partial class FolderView : UserControl
         if (dialog.ShowDialog() != true) return;
         var added = dialog.SelectedApps;
         Change(config => ShelfTree.Container(config, FolderId).AddRange(ConfigurationStore.CopyItems(added)));
-        StatusText.Text = $"Добавлено приложений: {added.Count}";
+        StatusText.Text = L.F("AppsAdded0", added.Count);
     }
     private void AddFiles()
     {
-        var picker = new OpenFileDialog { Multiselect = true, Title = "Добавить приложения, ярлыки или файлы", Filter = "Приложения и ярлыки|*.exe;*.lnk;*.url;*.appref-ms|Все файлы|*.*" };
+        var picker = new OpenFileDialog { Multiselect = true, Title = L.Get("AddAppsShortcutsOrFiles"), Filter = L.Get("ApplicationShortcutFilter") };
         if (picker.ShowDialog(Window.GetWindow(this)) == true) AddPaths(picker.FileNames, FolderId);
     }
     private void AddCustom()
     {
-        var item = ShelfItem.Application("Новое приложение", "");
+        var item = ShelfItem.Application(L.Get("NewApp"), "");
         var dialog = new EntryDialog(item) { Owner = Window.GetWindow(this) };
         if (dialog.ShowDialog() == true) Change(config => ShelfTree.Container(config, FolderId).Add(dialog.Result));
     }
@@ -137,20 +143,20 @@ public partial class FolderView : UserControl
         var menu = new ContextMenu();
         if (FolderId is { } id)
         {
-            AddMenu(menu, "Открыть с панели задач", () => App.Current.ShowFolder(id));
-            AddMenu(menu, "Панель задач и рабочий стол…", Pin);
-            AddMenu(menu, "Параметры папки…", () => new FolderSettingsDialog(id) { Owner = Window.GetWindow(this) }.ShowDialog());
-            AddMenu(menu, "Переименовать…", () => Rename(id));
-            AddMenu(menu, "Запустить всё в папке", () => LaunchAll(id));
+            AddMenu(menu, L.Get("OpenTaskbarMenu"), () => App.Current.ShowFolder(id));
+            AddMenu(menu, L.Get("TaskbarAndDesktop2"), Pin);
+            AddMenu(menu, L.Get("FolderSettings2"), () => new FolderSettingsDialog(id) { Owner = Window.GetWindow(this) }.ShowDialog());
+            AddMenu(menu, L.Get("Rename2"), () => Rename(id));
+            AddMenu(menu, L.Get("LaunchAllAppsInThisFolder"), () => LaunchAll(id));
             menu.Items.Add(new Separator());
         }
-        AddMenu(menu, "Сортировать по названию", () => Change(config => ShelfTree.Container(config, FolderId).Sort((a, b) => { var kind = a.Kind.CompareTo(b.Kind); return kind != 0 ? kind : StringComparer.CurrentCultureIgnoreCase.Compare(a.Name, b.Name); })));
-        AddMenu(menu, "Отменить последнее действие", () => { try { Session.Undo(); } catch (Exception ex) { App.Current.Report(ex); } }, Session.CanUndo);
-        if (Compact) AddMenu(menu, "Открыть AppShelf", () => App.Current.ShowEditor(FolderId));
+        AddMenu(menu, L.Get("SortByName"), () => Change(config => ShelfTree.Container(config, FolderId).Sort((a, b) => { var kind = a.Kind.CompareTo(b.Kind); return kind != 0 ? kind : StringComparer.CurrentCultureIgnoreCase.Compare(a.Name, b.Name); })));
+        AddMenu(menu, L.Get("UndoLastChange"), () => { try { Session.Undo(); } catch (Exception ex) { App.Current.Report(ex); } }, Session.CanUndo);
+        if (Compact) AddMenu(menu, L.Get("OpenAppShelf"), () => App.Current.ShowEditor(FolderId));
         else
         {
             menu.Items.Add(new Separator());
-            AddMenu(menu, "Завершить работу AppShelf", () => App.Current.Quit());
+            AddMenu(menu, L.Get("QuitAppShelf"), () => App.Current.Quit());
         }
         OpenMenu(menu, (FrameworkElement)sender);
     }
@@ -159,30 +165,30 @@ public partial class FolderView : UserControl
         if (((Button)sender).DataContext is not TileModel model) return;
         var item = model.Item;
         var menu = new ContextMenu();
-        AddMenu(menu, item.IsFolder ? "Открыть папку" : "Открыть", () => { if (item.IsFolder) Navigate(item.Id); else Launch(item); });
+        AddMenu(menu, item.IsFolder ? L.Get("OpenFolder") : L.Get("Open"), () => { if (item.IsFolder) Navigate(item.Id); else Launch(item); });
         if (item.IsFolder)
         {
-            AddMenu(menu, "Открыть компактное меню", () => App.Current.ShowFolder(item.Id));
-            AddMenu(menu, "Параметры папки…", () => new FolderSettingsDialog(item.Id) { Owner = Window.GetWindow(this) }.ShowDialog());
-            AddMenu(menu, "Панель задач и рабочий стол…", () => { Navigate(item.Id); Pin(); });
-            AddMenu(menu, "Добавить на рабочий стол", async () =>
+            AddMenu(menu, L.Get("OpenCompactMenu"), () => App.Current.ShowFolder(item.Id));
+            AddMenu(menu, L.Get("FolderSettings2"), () => new FolderSettingsDialog(item.Id) { Owner = Window.GetWindow(this) }.ShowDialog());
+            AddMenu(menu, L.Get("TaskbarAndDesktop2"), () => { Navigate(item.Id); Pin(); });
+            AddMenu(menu, L.Get("AddToDesktop"), async () =>
             {
-                try { await App.Current.Publisher.AddDesktopAsync(item.Id); StatusText.Text = "Папка добавлена на рабочий стол"; }
+                try { await App.Current.Publisher.AddDesktopAsync(item.Id); StatusText.Text = L.Get("FolderAddedToDesktop"); }
                 catch (Exception ex) { App.Current.Report(ex); }
             });
         }
-        else AddMenu(menu, "Запустить от имени администратора", () => Launch(item, true));
-        AddMenu(menu, "Переименовать…", () => Rename(item.Id));
-        if (!item.IsFolder) AddMenu(menu, "Свойства…", () => Edit(item));
-        AddMenu(menu, "Переместить…", () => MoveWithDialog(item));
+        else AddMenu(menu, L.Get("RunAsAdministrator2"), () => Launch(item, true));
+        AddMenu(menu, L.Get("Rename2"), () => Rename(item.Id));
+        if (!item.IsFolder) AddMenu(menu, L.Get("Properties"), () => Edit(item));
+        AddMenu(menu, L.Get("Move2"), () => MoveWithDialog(item));
         menu.Items.Add(new Separator());
-        AddMenu(menu, "Убрать из AppShelf", () => Remove(item));
+        AddMenu(menu, L.Get("RemoveFromAppShelf"), () => Remove(item));
         OpenMenu(menu, (FrameworkElement)sender); e.Handled = true;
     }
     private void Rename(Guid id)
     {
         var item = ShelfTree.Find(Session.Configuration, id)!;
-        var name = NameDialog.Ask(Window.GetWindow(this), "Переименовать", "Название", item.Name);
+        var name = NameDialog.Ask(Window.GetWindow(this), L.Get("Rename"), L.Get("Name"), item.Name);
         if (name is not null) Change(config => ShelfTree.Find(config, id)!.Name = name);
     }
     private void Edit(ShelfItem item)
@@ -193,9 +199,9 @@ public partial class FolderView : UserControl
     }
     private void Remove(ShelfItem item)
     {
-        if (item.IsFolder && item.Children.Count > 0 && MessageBox.Show(Window.GetWindow(this), "Убрать папку вместе с её содержимым из AppShelf? Приложения и файлы останутся на компьютере.", "Убрать папку «" + item.Name + "»", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        if (item.IsFolder && item.Children.Count > 0 && MessageBox.Show(Window.GetWindow(this), L.Get("RemoveFolderConfirmation"), L.Get("RemoveFolder") + item.Name + "»", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         Change(config => ShelfTree.Parent(config, item.Id)!.RemoveAll(x => x.Id == item.Id));
-        StatusText.Text = "Элемент убран. Ctrl+Z — отменить";
+        StatusText.Text = L.Get("ItemRemovedPressCtrlZToUndo");
     }
     private void MoveWithDialog(ShelfItem item)
     {
@@ -207,7 +213,7 @@ public partial class FolderView : UserControl
     {
         var apps = ShelfTree.Find(Session.Configuration, id)!.Children.Where(x => !x.IsFolder).ToList();
         if (apps.Count == 0) return;
-        if (MessageBox.Show(Window.GetWindow(this), $"Запустить приложений: {apps.Count}?", "Запустить всё", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+        if (MessageBox.Show(Window.GetWindow(this), L.F("Launch0Apps", apps.Count), L.Get("LaunchAll"), MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
         foreach (var item in apps) Launch(item);
     }
     private void DragStart(object sender, MouseButtonEventArgs e) { dragOrigin = e.GetPosition(this); }
@@ -243,7 +249,7 @@ public partial class FolderView : UserControl
                 var origin = ShelfTree.Find(config, source)!;
                 if (origin.IsFolder) { ShelfTree.Move(config, source, FolderId, current.Id); return; }
                 var parent = ShelfTree.Parent(config, current.Id)!;
-                var folder = ShelfItem.Folder("Новая папка");
+                var folder = ShelfItem.Folder(L.Get("NewFolder"));
                 parent.Insert(parent.IndexOf(current), folder);
                 ShelfTree.Move(config, current.Id, folder.Id);
                 ShelfTree.Move(config, source, folder.Id);

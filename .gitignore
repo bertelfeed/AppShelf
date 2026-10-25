@@ -5,3 +5,14 @@
 .packages/
 artifacts/
 *.user
+.claude/
+.codex/
+.env
+.env.*
+*.pfx
+*.p12
+*.key
+# Local development journals contain machine-specific paths and real profile details.
+HANDOFF_CLAUDE_CODE.md
+VALIDATION.md
+data/

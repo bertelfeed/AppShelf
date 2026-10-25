@@ -10,7 +10,7 @@ public static class ShelfApiTools
 {
     public const string Instructions =
         "AppShelf groups Windows apps into folders that open as compact menus from desktop icons and taskbar buttons. " +
-        "Typical request (often dictated): 'put Telegram and Discord into Общение, games into Игры, clean up the desktop'. " +
+        "Typical request (often dictated): 'put Telegram and Discord into Chat, games into Games, clean up the desktop'. " +
         "Workflow: call get_desktop and get_folders first, then make the whole change with one organize call. " +
         "Refer to desktop items by the exact 'name' from get_desktop; apps that are not on the desktop can be found with find_installed_apps. " +
         "Dictated names often arrive transliterated ('Обсидиан' for Obsidian, 'Дискорд' for Discord): prefer the matching exact name from get_desktop; " +
@@ -36,15 +36,15 @@ public static class ShelfApiTools
     public static JsonArray List()
     {
         var item = Text("Desktop item name from get_desktop (e.g. 'Telegram'), a full path, or an installed app name from find_installed_apps.");
-        var colors = new JsonArray(FolderFaceCatalog.Palette.Select(x => (JsonNode)x.Name).Append("Авто").ToArray());
-        var symbols = new JsonArray(FolderFaceCatalog.Symbols.Select(x => (JsonNode)x.Name).ToArray());
+        var colors = new JsonArray(FolderFaceCatalog.Palette.Select(x => (JsonNode)L.CatalogLabel(x.Name, "en-US")).Append("Automatic").ToArray());
+        var symbols = new JsonArray(FolderFaceCatalog.Symbols.Select(x => (JsonNode)L.CatalogLabel(x.Name, "en-US")).ToArray());
         return
         [
             Tool("get_desktop", "List everything on the user's desktop (own and all-users): name, kind (shortcut, web_link, program, file, folder, appshelf_folder), " +
                 "target, and in which AppShelf folders it already is.", Object(new()), true),
             Tool("get_folders", "Show the AppShelf folder tree with the apps in each folder and whether the folder is on the desktop or the taskbar.", Object(new()), true),
             Tool("find_installed_apps", "Search installed Windows apps (Start menu) by part of the name, for apps that are not on the desktop.",
-                Object(new() { ["query"] = Text("Part of the app name, e.g. 'telegram' or 'фото'.") }, "query"), true),
+                Object(new() { ["query"] = Text("Part of the app name, e.g. 'telegram' or 'photos'.") }, "query"), true),
             Tool("organize", "Put apps into folders in one undoable step. Missing folders are created; an app already in another folder is moved. " +
                 "Nothing changes if any item is not found; the reply then lists suggestions.",
                 Object(new()
@@ -84,8 +84,9 @@ public static class ShelfApiTools
             {
                 ["folder"] = Text("Folder name or 'Parent/Child'."),
                 ["look"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray("apps", "symbol", "picture") },
-                ["color"] = new JsonObject { ["type"] = "string", ["enum"] = colors, ["description"] = "Plate colour; 'Авто' keeps the translucent plate." },
-                ["symbol"] = new JsonObject { ["type"] = "string", ["enum"] = symbols, ["description"] = "Required for look=symbol." },
+                ["color"] = new JsonObject { ["type"] = "string", ["enum"] = colors, ["description"] = "Plate color; 'Automatic' keeps the translucent plate. Legacy Russian color names are also accepted." },
+                ["opacity"] = new JsonObject { ["type"] = "integer", ["minimum"] = 5, ["maximum"] = 100, ["description"] = "Plate opacity in percent (default 40, see-through)." },
+                ["symbol"] = new JsonObject { ["type"] = "string", ["enum"] = symbols, ["description"] = "Required for look=symbol. English and legacy Russian symbol names are accepted." },
                 ["picture"] = Text("Path to a PNG, JPG, BMP or ICO file; required for look=picture.")
             }, "folder"), false),
             Tool("restore_desktop", "Put shortcuts that organize moved off the desktop back where they were.", Object(new()

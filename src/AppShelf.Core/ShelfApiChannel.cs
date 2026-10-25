@@ -32,8 +32,8 @@ public static class ShelfApiChannel
         using var reader = new StreamReader(client, new UTF8Encoding(false), false, 4096, leaveOpen: true);
         await using var writer = new StreamWriter(client, new UTF8Encoding(false), 4096, leaveOpen: true) { AutoFlush = true };
         await writer.WriteLineAsync(request.ToJsonString());
-        var line = await reader.ReadLineAsync(cancellation) ?? throw new IOException("AppShelf закрыл соединение без ответа.");
-        var reply = JsonNode.Parse(line)?.AsObject() ?? throw new IOException("Пустой ответ AppShelf.");
+        var line = await reader.ReadLineAsync(cancellation) ?? throw new IOException(L.Get("ConnectionClosed"));
+        var reply = JsonNode.Parse(line)?.AsObject() ?? throw new IOException(L.Get("EmptyReply"));
         return new(reply["ok"]?.GetValue<bool>() == true, reply["text"]?.GetValue<string>() ?? "");
     }
 
@@ -68,7 +68,7 @@ public static class ShelfApiChannel
                 deadline.CancelAfter(TimeSpan.FromSeconds(10));
                 var line = await reader.ReadLineAsync(deadline.Token);
                 Reply reply;
-                if (line is null || line.Length > MaxMessage) reply = new(false, "Слишком большой или пустой запрос.");
+                if (line is null || line.Length > MaxMessage) reply = new(false, L.Get("InvalidRequestSize"));
                 else
                 {
                     try
@@ -78,7 +78,7 @@ public static class ShelfApiChannel
                         reply = await handle(tool, request["arguments"] as JsonObject ?? new JsonObject());
                     }
                     catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
-                    { reply = new(false, "Некорректный запрос: " + ex.Message); }
+                    { reply = new(false, L.F("InvalidRequest", ex.Message)); }
                 }
                 await writer.WriteLineAsync(new JsonObject { ["ok"] = reply.Ok, ["text"] = reply.Text }.ToJsonString());
             }

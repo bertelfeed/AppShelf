@@ -27,14 +27,14 @@
     <Image Source="Assets/AppShelf.ico" Width="30" Height="30" RenderOptions.BitmapScalingMode="HighQuality"/>
     <TextBlock Text="AppShelf" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,0,0"/>
    </StackPanel>
-   <Button x:Name="HomeButton" Grid.Row="1" Style="{StaticResource NavButton}" Click="HomeClick" AutomationProperties.Name="Мои папки">
-    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="Мои папки"/></StackPanel>
+   <Button x:Name="HomeButton" Grid.Row="1" Style="{StaticResource NavButton}" Click="HomeClick" AutomationProperties.Name="{DynamicResource Text.MyFolders}">
+    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="{DynamicResource Text.MyFolders}"/></StackPanel>
    </Button>
    <Grid Grid.Row="2" Margin="0,18,0,0">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
     <Grid Margin="14,0,5,8">
-     <TextBlock Text="ПАПКИ" FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
-     <Button HorizontalAlignment="Right" Style="{StaticResource IconButton}" Click="NewFolderClick" ToolTip="Создать папку"><TextBlock Text="&#xE710;" Style="{StaticResource Glyph}" FontSize="12"/></Button>
+     <TextBlock Text="{DynamicResource Text.FOLDERS}" FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+     <Button HorizontalAlignment="Right" Style="{StaticResource IconButton}" Click="NewFolderClick" ToolTip="{DynamicResource Text.CreateFolder}"><TextBlock Text="&#xE710;" Style="{StaticResource Glyph}" FontSize="12"/></Button>
     </Grid>
     <TreeView x:Name="FolderTree" Grid.Row="1" Background="Transparent" BorderThickness="0" SelectedItemChanged="FolderSelected" Padding="4,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
      <TreeView.ItemContainerStyle><Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}"><Setter Property="IsExpanded" Value="True"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Foreground" Value="{DynamicResource TextBrush}"/><Setter Property="AutomationProperties.Name" Value="{Binding Name}"/></Style></TreeView.ItemContainerStyle>
@@ -42,9 +42,9 @@
    </Grid>
    <StackPanel Grid.Row="3">
     <Border Height="1" Margin="12,12" Background="{DynamicResource LineBrush}"/>
-    <Button Style="{StaticResource NavButton}" Click="BackupClick"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="Резервные копии"/></StackPanel></Button>
-    <Button Style="{StaticResource NavButton}" Click="SettingsClick"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="Параметры"/></StackPanel></Button>
-    <TextBlock Text="Ваши приложения. В своём порядке." FontSize="10" Foreground="{DynamicResource MutedBrush}" Margin="14,14,0,7"/>
+    <Button Style="{StaticResource NavButton}" Click="BackupClick"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="{DynamicResource Text.Backups}"/></StackPanel></Button>
+    <Button Style="{StaticResource NavButton}" Click="SettingsClick"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="{DynamicResource Text.Settings2}"/></StackPanel></Button>
+    <TextBlock Text="{DynamicResource Text.YourAppsInYourOwnOrder}" FontSize="10" Foreground="{DynamicResource MutedBrush}" Margin="14,14,0,7"/>
    </StackPanel>
   </Grid>
   <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="28,24,24,20">

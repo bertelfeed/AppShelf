@@ -1,0 +1,36 @@
+name: Prepare draft release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  draft:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check and package
+        shell: pwsh
+        env:
+          APPSHELF_SKIP_FOREGROUND_CHECKS: '1'
+        run: ./build.ps1 -Check -Package
+      - name: Create a draft for review
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = [string]([xml](Get-Content Directory.Build.props -Raw)).Project.PropertyGroup.Version
+          $options = @('release', 'create', "v$version", "artifacts/AppShelf-$version-win-x64.zip", "artifacts/AppShelf-$version-win-x64.zip.sha256", '--draft', '--title', "AppShelf $version", '--target', $env:GITHUB_SHA, '--notes-file', 'docs/RELEASE_NOTES.md')
+          if ([version]$version -lt [version]'1.0.0') { $options += '--prerelease' }
+          & gh @options
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed.' }

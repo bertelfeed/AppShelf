@@ -1,7 +1,52 @@
-AppShelf 0.3.0 - reconstructed development checkpoint
+AppShelf 0.6.0 — Windows 11 x64 preview
 
-Build on Windows using .NET 10 SDK: ./build.ps1
-To publish the portable application: ./build.ps1 -Publish
-Keep the full data directory when updating an existing profile.
-Folder taskbar buttons and desktop single-click require AppShelf running.
-See LICENSE and THIRD-PARTY-NOTICES.txt for license terms.
+This is a development preview before the first stable release, 1.0.
+Russian guide: QUICKSTART.ru.txt / Прочитай меня.txt
+
+Start
+  Extract the entire AppShelf folder to a permanent, writable location.
+  Run AppShelf.exe. The .NET runtime is included.
+  Closing the editor hides it; AppShelf keeps running in the notification area.
+
+Language
+  Open Settings → Language and choose English or Русский, then Save.
+  The change applies immediately and is remembered for this profile.
+  A new profile follows Windows: Russian, or English for other languages.
+  Your folder and application names remain as you named them.
+
+Folders
+  Create a folder and add applications or drag shortcuts into it.
+  Drop an app onto another app to create a folder, or onto a folder to nest it.
+  You can also drop shortcuts into an open compact folder menu.
+  Place shows the folder on the desktop, taskbar, or both.
+  The gear button opens the settings for that individual folder.
+
+Menus
+  Desktop folders open with a single left click while AppShelf is running.
+  Click outside or press Esc to close, unless outside-click dismissal is disabled.
+  Click a nested folder title, press Backspace or Alt+Left to go back.
+  Use the wheel, PageUp/PageDown or the dots to change pages.
+  Desktop and taskbar menu icon scales are independent.
+  Windows chooses the folder icon size on the desktop and taskbar themselves.
+
+Background operation
+  Folder taskbar buttons exist while AppShelf is running and return on startup.
+  Autostart is optional in Settings. To fully exit, use the tray icon → Quit.
+  When AppShelf is closed, double-click a desktop shortcut to start it.
+  The system Start menu is not modified.
+
+Upgrading and data
+  Exit AppShelf and connected AppShelf.Mcp processes.
+  Back up the entire data directory beside the executables, then replace binaries.
+  Keep the artwork and copied launchers inside data. shelf.json.bak is the previous save.
+  Removing an item from AppShelf does not uninstall the program or delete its files.
+
+MCP
+  See MCP.md. The server is optional; there is no chatbot inside AppShelf.
+  restore_desktop returns archived shortcuts; undo reverts collection edits.
+  Artwork tools accept English names and legacy Russian aliases.
+
+License
+  AppShelf is MIT licensed; see LICENSE.
+  Microsoft runtime notices are in licenses/ and THIRD-PARTY-NOTICES.txt.
+  This preview has no installer, signing certificate or automatic updater.

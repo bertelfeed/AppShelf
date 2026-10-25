@@ -171,6 +171,7 @@ public sealed class FolderTaskbarWindow : Window
         width = Math.Clamp(width, 16, 1024); height = Math.Clamp(height, 16, 1024);
         var tiles = thumbnailIcons;
         var drawing = new DrawingVisual();
+        RenderOptions.SetBitmapScalingMode(drawing, BitmapScalingMode.HighQuality);
         using (var dc = drawing.RenderOpen())
         {
             if (tiles.Count == 0)

@@ -41,7 +41,7 @@ public sealed class ShelfRepair
         await RepairAsync([item]);
         var current = ShelfTree.Find(session.Configuration, item.Id) ?? item;
         if (ShortcutRepair.LocalTarget(current) is { } still && !ShortcutRepair.Exists(still))
-            throw new InvalidOperationException($"«{item.Name}» не найдено: {still}\nПрограмму удалили или переместили. Укажите её в AppShelf: правый щелчок → «Свойства…».");
+            throw new InvalidOperationException(L.F("MissingApplicationHelp", item.Name, still));
         return current;
     }
 
@@ -78,7 +78,7 @@ public sealed class ShelfRepair
                 fixes.Add((item.Id, current =>
                 {
                     current.Target = app.Target; current.Arguments = ""; current.WorkingDirectory = ""; current.IconPath = "";
-                    return $"меню «Пуск»: {app.Name}";
+                    return L.F("StartMenu0", app.Name);
                 }));
             }
             // Marks are updated before the change, so the redraw it triggers already shows them.

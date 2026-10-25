@@ -5,10 +5,11 @@ using AppShelf.Windows;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Localization = AppShelf.Core.Localization;
 
 internal static class Program
 {
-    private static int passed, failed;
+    private static int passed, failed, skipped;
     [STAThread]
     private static int Main(string[] args)
     {
@@ -18,10 +19,17 @@ internal static class Program
             client.ForwardAsync(command).GetAwaiter().GetResult();
             return client.IsPrimary ? 2 : 0;
         }
+        Localization.SetLanguage("ru-RU"); // Existing Russian assertions must not depend on the runner's OS language.
         var root = Path.Combine(Path.GetFullPath(args.FirstOrDefault() ?? Path.Combine(AppContext.BaseDirectory, "check-data")), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         void Check(string name, Action test)
         {
+            if (Environment.GetEnvironmentVariable("APPSHELF_SKIP_FOREGROUND_CHECKS") == "1" &&
+                name is "Foreground monitor detects switching windows even if the popup never had focus" or
+                    "A click on the folder's own button closes the menu instead of reopening it")
+            {
+                skipped++; Console.WriteLine("SKIP " + name + " (requires an interactive foreground desktop)"); return;
+            }
             try { test(); passed++; Console.WriteLine("PASS " + name); }
             catch (Exception ex) { failed++; Console.WriteLine("FAIL " + name + ": " + ex); }
         }
@@ -234,6 +242,12 @@ internal static class Program
                 "Focus lost with a button held must close on an outside release");
             Expect(!new DismissGate().Release(false, out _, out _), "A release without a press outside must not close");
         });
+        Check("Dragging a folder icon on the desktop does not open it, a click in place does", () =>
+        {
+            Expect(DesktopSingleClick.IsClick(100, 100, 101, 99, 4, 4), "A click with a pixel of jitter must still open the folder");
+            Expect(!DesktopSingleClick.IsClick(100, 100, 140, 100, 4, 4) && !DesktopSingleClick.IsClick(100, 100, 100, 104, 4, 4),
+                "Releasing after dragging the icon opened the folder");
+        });
         Check("The drop gap and the insertion bar follow the pointer", () =>
         {
             // 3 columns of 50×50 tiles, 7 apps on the page: rows of 3, 3, 1.
@@ -298,15 +312,22 @@ internal static class Program
             }
             var red = new DrawingImage(new GeometryDrawing(Brushes.Red, null, new RectangleGeometry(new Rect(0, 0, 64, 64))));
             var green = Color.FromRgb(0x10, 0x89, 0x3E);
-            var plated = FolderArtwork.Render([red], 64, look: new FolderLook(green));
+            var plated = FolderArtwork.Render([red], 64, look: new FolderLook(green, Opacity: 1));
             var edge = Pixel(plated, 32, 60);
             Expect(edge.A > 240 && Math.Abs(edge.G - green.G) < 30 && edge.R < 80, "Plate colour was not used");
+            // A coloured plate is see-through at the chosen opacity, like the standard plate.
+            var glass = Pixel(FolderArtwork.Render([red], 64, look: new FolderLook(green, Opacity: .3)), 32, 60);
+            Expect(glass.A is > 60 and < 100, "Plate opacity was not applied: alpha " + glass.A);
+            var standard = Pixel(FolderArtwork.Render([red], 64), 32, 60).A;
+            Expect(Math.Abs(Pixel(FolderArtwork.Render([red], 64, look: new FolderLook(Opacity: FolderLook.DefaultOpacity)), 32, 60).A - standard) <= 2 &&
+                Pixel(FolderArtwork.Render([red], 64, look: new FolderLook(Opacity: .1)), 32, 60).A < standard, "Opacity of the standard plate is wrong");
             Expect(Pixel(plated, 32, 32).R > 200, "Apps were not drawn on the coloured plate");
             var symbol = FolderArtwork.Render([red], 64, look: new FolderLook(null, FolderLook.Symbols[0].Glyph));
             var white = 0; var pixels = new byte[64 * 64 * 4]; symbol.CopyPixels(pixels, 64 * 4, 0);
             for (var i = 0; i < pixels.Length; i += 4) if (pixels[i] > 220 && pixels[i + 1] > 220 && pixels[i + 2] > 220) white++;
             Expect(white > 40, "Symbol glyph is missing");
-            Expect(Pixel(symbol, 32, 60) is { B: > 150, R: < 60 }, "Symbol has no default plate");
+            // Default symbol plate: Windows blue at the default 40 % (pixels are premultiplied).
+            Expect(Pixel(symbol, 32, 60) is { A: > 80 and < 120, B: > 60, R: < 20 }, "Symbol has no default see-through blue plate: " + Pixel(symbol, 32, 60));
             var picture = FolderArtwork.Render([], 64, look: new FolderLook(null, null, red));
             Expect(Pixel(picture, 32, 32) is { R: > 240, G: < 20 } && Pixel(picture, 6, 32).R > 240, "Picture does not fill the icon");
             Expect(Pixel(picture, 0, 0).A < 40, "Picture ignores the rounded corners");
@@ -314,7 +335,8 @@ internal static class Program
         Check("Folder look settings default for older files and reject invalid colours", () =>
         {
             var legacy = System.Text.Json.JsonSerializer.Deserialize<FolderSettings>("{\"Columns\":4}")!;
-            Expect(legacy.Face == FolderFace.Preview && legacy.FaceColor == "" && legacy.FaceSymbol == "" && legacy.FaceImage == "" && legacy.Rows == 4);
+            Expect(legacy.Face == FolderFace.Preview && legacy.FaceColor == "" && legacy.FaceSymbol == "" && legacy.FaceImage == "" && legacy.Rows == 4 && legacy.FaceOpacity == 40);
+            foreach (var opacity in new[] { 4, 101 }) { var bad = Example(); bad.Items[0].Settings.FaceOpacity = opacity; Reject(() => ShelfTree.Validate(bad)); }
             var config = Example();
             foreach (var rows in new[] { 0, 9 }) { config.Items[0].Settings.Rows = rows; Reject(() => ShelfTree.Validate(config)); }
             config.Items[0].Settings.Rows = 1; ShelfTree.Validate(config);
@@ -410,8 +432,45 @@ internal static class Program
             var loaded = ConfigurationStore.Read(path).Items[0].Settings;
             Expect(loaded.IconSize == 64 && loaded.ShowOnTaskbar && loaded.DesktopIconScale == 100 && loaded.TaskbarIconScale == 80);
         });
+        Check("English and Russian resources have matching keys and valid format placeholders", () =>
+        {
+            var english = Localization.Strings("en-US"); var russian = Localization.Strings("ru-RU");
+            Expect(english.Count >= 200 && english.Keys.Order().SequenceEqual(russian.Keys.Order()));
+            foreach (var key in english.Keys)
+            {
+                Expect(!string.IsNullOrWhiteSpace(english[key]) && !string.IsNullOrWhiteSpace(russian[key]), "Empty message: " + key);
+                var enFormat = System.Text.CompositeFormat.Parse(english[key]);
+                var ruFormat = System.Text.CompositeFormat.Parse(russian[key]);
+                Expect(enFormat.MinimumArgumentCount == ruFormat.MinimumArgumentCount, "Different placeholders: " + key);
+                Expect(key == "RussianLanguageName" || !System.Text.RegularExpressions.Regex.IsMatch(english[key], "[А-Яа-яЁё]"), "Untranslated English resource: " + key);
+            }
+        });
+        Check("Switching languages changes messages and plural forms without renaming user content", () =>
+        {
+            var config = Example(); var names = ShelfTree.Walk(config.Items).Select(item => item.Name).ToArray();
+            try
+            {
+                Localization.SetLanguage("en-US");
+                Expect(Localization.Get("MyFolders") == "My folders" && Localization.Elements(1) == "1 item" && Localization.Elements(21) == "21 items");
+                Expect(Localization.CatalogLabel("Игры") == "Games");
+                Localization.SetLanguage("ru-RU");
+                Expect(Localization.Get("MyFolders") == "Мои папки" && Localization.Elements(1) == "1 элемент" &&
+                    Localization.Elements(2) == "2 элемента" && Localization.Elements(11) == "11 элементов" && Localization.Elements(21) == "21 элемент");
+                Expect(ShelfTree.Walk(config.Items).Select(item => item.Name).SequenceEqual(names));
+            }
+            finally { Localization.SetLanguage("ru-RU"); }
+        });
+        Check("Language selection persists with folder identities and legacy Russian preferences", () =>
+        {
+            var config = Example(); var id = config.Items[0].Id;
+            var store = new ConfigurationStore(Path.Combine(root, "language"));
+            config.Language = "en-US"; store.Save(config);
+            Expect(store.Load().Language == "en-US" && store.Load().Items[0].Id == id);
+            config.Language = "ru-RU"; store.Save(config);
+            Expect(store.Load().Language == "ru-RU" && store.Load().Items[0].Name == "Работа");
+        });
         RunWindowChecks(root, Check, Expect);
-        Console.WriteLine($"RESULT {passed} passed, {failed} failed");
+        Console.WriteLine($"RESULT {passed} passed, {failed} failed, {skipped} skipped");
         return failed == 0 ? 0 : 1;
     }
 
@@ -643,7 +702,10 @@ internal static class Program
             {
                 dialog.Show();
                 PumpUntil(() => dialog.IsLoaded);
-                var sliders = Descendants(dialog).OfType<System.Windows.Controls.Slider>().ToList();
+                var all = Descendants(dialog).OfType<System.Windows.Controls.Slider>().ToList();
+                System.Windows.Controls.Slider Named(string name) => all.Single(x => System.Windows.Automation.AutomationProperties.GetName(x) == name);
+                var sliders = new[] { Named("Масштаб иконок · рабочий стол"), Named("Масштаб иконок · панель задач") };
+                expect(Named("Непрозрачность подложки").Value == before.FaceOpacity, "Plate opacity slider is missing or wrong");
                 System.Windows.Controls.Image Preview() { dialog.UpdateLayout(); return Descendants(dialog).OfType<System.Windows.Controls.Image>().First(); }
                 expect(Preview().Width == before.IconSizeFor(true), "Preview does not start on the desktop surface");
                 sliders[1].Value = 200;
@@ -686,9 +748,11 @@ internal static class Program
             var text = ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Текст");
             expect(moved.Ok && text.Children.Single().Name == "notes.txt" && sites.Children.Count == 2 &&
                 ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Сайты").Children.Count == 1, "Organize duplicated instead of moving: " + moved.Text);
-            var look = Call("set_folder_look", "{\"folder\":\"Сайты\",\"look\":\"symbol\",\"symbol\":\"Интернет\",\"color\":\"Зелёный\"}");
+            var look = Call("set_folder_look", "{\"folder\":\"Сайты\",\"look\":\"symbol\",\"symbol\":\"Интернет\",\"color\":\"Зелёный\",\"opacity\":25}");
             var settings = ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Сайты").Settings;
-            expect(look.Ok && settings.Face == FolderFace.Symbol && settings.FaceColor == "#10893E" && settings.FaceSymbol == "", "Folder look was not applied: " + look.Text);
+            expect(look.Ok && settings.Face == FolderFace.Symbol && settings.FaceColor == "#10893E" && settings.FaceSymbol == "" && settings.FaceOpacity == 25,
+                "Folder look was not applied: " + look.Text);
+            expect(!Call("set_folder_look", "{\"folder\":\"Сайты\",\"opacity\":1}").Ok, "Opacity outside 5–100 was accepted");
             var restored = Call("restore_desktop");
             expect(restored.Ok && File.Exists(Path.Combine(desktop, "Сайт.url")), "Shortcut was not restored: " + restored.Text);
             expect(Call("rename_item", "{\"item\":\"Сайты/Сайт\",\"new_name\":\"Пример\"}").Ok &&
@@ -805,6 +869,116 @@ internal static class Program
         {
             using var clicks = new DesktopSingleClick(session.Store.DirectoryPath, _ => { });
             expect(clicks.Installed, "Windows rejected the single-click hook");
+        });
+        check("Language selector saves English and updates existing dynamic UI resources immediately", () =>
+        {
+            session.Changed += application.ApplyLanguage;
+            Window? host = null;
+            try
+            {
+                session.Change(config => config.Language = "ru-RU");
+                var sidebar = new System.Windows.Controls.TextBlock();
+                sidebar.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "Text.MyFolders");
+                host = new Window { Content = sidebar, Width = 200, Height = 80, ShowInTaskbar = false, ShowActivated = false };
+                host.Show();
+                expect(sidebar.Text == "Мои папки", "Initial Russian UI missing");
+                var settings = new AppShelf.App.SettingsDialog { Owner = host };
+                settings.Loaded += (_, _) =>
+                {
+                    var controls = Descendants(settings).ToList();
+                    var selector = controls.OfType<System.Windows.Controls.ComboBox>().Single(box =>
+                        System.Windows.Automation.AutomationProperties.GetName(box) == "Язык");
+                    expect(selector.IsEnabled && selector.Items.Count == 2, "Language selector is still a placeholder");
+                    selector.SelectedIndex = 0;
+                    controls.OfType<System.Windows.Controls.Button>().Single(button => button.Content as string == "Сохранить")
+                        .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                };
+                expect(settings.ShowDialog() == true, "Language settings did not save");
+                expect(session.Store.Load().Language == "en-US", "English selection did not persist");
+                PumpUntil(() => sidebar.Text == "My folders");
+                var dialog = new AppShelf.App.FolderSettingsDialog(folder.Id);
+                try
+                {
+                    dialog.Show(); dialog.UpdateLayout();
+                    expect(dialog.Title == "Folder settings", "Folder dialog title was not translated");
+                    var labels = Descendants(dialog).OfType<System.Windows.Controls.TextBlock>().Select(block => block.Text).ToList();
+                    expect(labels.Contains("Desktop") && labels.Contains("Taskbar") && labels.Contains("Rows per page"), "English folder controls missing");
+                    expect(!labels.Any(label => System.Text.RegularExpressions.Regex.IsMatch(label, "[А-Яа-яЁё]")), "Russian text remained in the English folder dialog");
+                }
+                finally { dialog.Close(); }
+                session.Change(config => config.Language = "ru-RU");
+                PumpUntil(() => sidebar.Text == "Мои папки");
+            }
+            finally
+            {
+                session.Changed -= application.ApplyLanguage;
+                host?.Close();
+                Localization.SetLanguage("ru-RU");
+            }
+        });
+        check("English dialogs translate settings, app properties, destinations and artwork labels", () =>
+        {
+            try
+            {
+                session.Change(config => config.Language = "en-US"); application.ApplyLanguage();
+                var windows = new Window[]
+                {
+                    new AppShelf.App.SettingsDialog(),
+                    new AppShelf.App.EntryDialog(ShelfItem.Application("Calculator", "calc.exe")),
+                    new AppShelf.App.MoveDialog(new ShelfConfiguration { Items = [ShelfItem.Folder("Work")] }, []),
+                    new AppShelf.App.FolderSettingsDialog(folder.Id)
+                };
+                foreach (var window in windows)
+                {
+                    try
+                    {
+                        window.Show(); window.UpdateLayout();
+                        var labels = Descendants(window).OfType<FrameworkElement>().SelectMany(element => new[]
+                        {
+                            (element as System.Windows.Controls.TextBlock)?.Text,
+                            (element as System.Windows.Controls.ContentControl)?.Content as string,
+                            element.ToolTip as string,
+                            System.Windows.Automation.AutomationProperties.GetName(element)
+                        }).Append(window.Title).Where(text => text is not null && text != "Русский");
+                        expect(!labels.Any(text => System.Text.RegularExpressions.Regex.IsMatch(text!, "[А-Яа-яЁё]")),
+                            "Untranslated text in " + window.Title);
+                    }
+                    finally { window.Close(); }
+                }
+                foreach (var name in FolderFaceCatalog.Palette.Select(x => x.Name).Concat(FolderFaceCatalog.Symbols.Select(x => x.Name)))
+                    expect(!System.Text.RegularExpressions.Regex.IsMatch(Localization.CatalogLabel(name), "[А-Яа-яЁё]"), "Untranslated artwork label: " + name);
+            }
+            finally { session.Change(config => config.Language = "ru-RU"); application.ApplyLanguage(); }
+        });
+        check("English API errors and artwork names work with legacy Russian aliases", () =>
+        {
+            var apiSession = new AppShelf.App.ShelfSession(Path.Combine(root, "english-api"));
+            apiSession.Change(config => config.Items.Add(ShelfItem.Folder("Work")));
+            var api = new AppShelf.App.ShelfApi(apiSession, null);
+            ShelfApiChannel.Reply Call(string tool, string json = "{}")
+            {
+                var task = api.HandleAsync(tool, System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject());
+                PumpUntil(() => task.IsCompleted); return task.Result;
+            }
+            try
+            {
+                Localization.SetLanguage("en-US");
+                expect(Call("unknown").Text == "Unknown tool: unknown", "Unknown tool error is not English");
+                expect(Call("move_item").Text == "Missing parameter: item.", "Parameter error is not English");
+                expect(Call("place_folder", "{\"folder\":\"Missing\",\"taskbar\":false}").Text == "Folder “Missing” was not found.", "Folder error is not English");
+                var english = Call("set_folder_look", "{\"folder\":\"Work\",\"look\":\"symbol\",\"symbol\":\"Games\",\"color\":\"Blue\"}");
+                expect(english.Ok && english.Text.Contains("Games") && english.Text.Contains("Blue"), "English artwork names were not applied: " + english.Text);
+                var russian = Call("set_folder_look", "{\"folder\":\"Work\",\"symbol\":\"Игры\",\"color\":\"Синий\"}");
+                expect(russian.Ok && russian.Text == english.Text, "Legacy Russian artwork names changed behavior");
+                expect(Call("set_folder_look", "{\"folder\":\"Work\",\"color\":\"Automatic\"}").Ok, "Automatic color was not accepted");
+                var schema = ShelfApiTools.List().Single(tool => tool!["name"]!.GetValue<string>() == "set_folder_look")!;
+                var colors = schema["inputSchema"]!["properties"]!["color"]!["enum"]!.AsArray().Select(value => value!.GetValue<string>()).ToArray();
+                expect(colors.Contains("Blue") && colors.Contains("Automatic") && !colors.Contains("Синий"), "MCP still advertises Russian-only colors");
+                Localization.SetLanguage("ru-RU");
+                expect(Call("unknown").Text == "Неизвестный инструмент: unknown", "Russian API messages were lost");
+                expect(Call("set_folder_look", "{\"folder\":\"Work\",\"symbol\":\"Games\",\"color\":\"Blue\"}").Ok, "English names depend on UI language");
+            }
+            finally { apiSession.Icons.Dispose(); Localization.SetLanguage("ru-RU"); }
         });
         manager?.Dispose();
         foreach (var window in application.Windows.Cast<Window>().ToList()) window.Close();

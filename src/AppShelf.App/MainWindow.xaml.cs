@@ -48,21 +48,21 @@ public partial class MainWindow : Window
     private void BackupClick(object sender, RoutedEventArgs e)
     {
         var menu = new System.Windows.Controls.ContextMenu();
-        FolderView.AddMenu(menu, "Экспортировать все папки…", Export);
-        FolderView.AddMenu(menu, "Импортировать папки…", Import);
-        FolderView.AddMenu(menu, "Открыть папку настроек", () => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{App.Current.Session.Store.DirectoryPath}\"") { UseShellExecute = true }));
+        FolderView.AddMenu(menu, L.Get("ExportAllFolders"), Export);
+        FolderView.AddMenu(menu, L.Get("ImportFolders"), Import);
+        FolderView.AddMenu(menu, L.Get("OpenSettingsDirectory"), () => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{App.Current.Session.Store.DirectoryPath}\"") { UseShellExecute = true }));
         FolderView.OpenMenu(menu, (FrameworkElement)sender);
     }
     private void Export()
     {
-        var dialog = new SaveFileDialog { Filter = "Папки AppShelf|*.appshelf.json", FileName = "AppShelf-" + DateTime.Now.ToString("yyyy-MM-dd") + ".appshelf.json" };
+        var dialog = new SaveFileDialog { Filter = L.Get("ExportFileFilter"), FileName = "AppShelf-" + DateTime.Now.ToString("yyyy-MM-dd") + ".appshelf.json" };
         if (dialog.ShowDialog(this) != true) return;
         try { File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(App.Current.Session.Configuration, ConfigurationStore.JsonOptions)); }
         catch (Exception ex) { App.Current.Report(ex); }
     }
     private void Import()
     {
-        var dialog = new OpenFileDialog { Filter = "Папки AppShelf|*.json" };
+        var dialog = new OpenFileDialog { Filter = L.Get("ImportFileFilter") };
         if (dialog.ShowDialog(this) != true) return;
         try { App.Current.Session.Import(dialog.FileName); }
         catch (Exception ex) { App.Current.Report(ex); }
