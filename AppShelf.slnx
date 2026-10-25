@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/AppShelf.Core/AppShelf.Core.csproj" />
+  <Project Path="src/AppShelf.Windows/AppShelf.Windows.csproj" />
+  <Project Path="src/AppShelf.App/AppShelf.App.csproj" />
+  <Project Path="tests/AppShelf.Checks/AppShelf.Checks.csproj" />
+</Solution>

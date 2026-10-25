@@ -1,0 +1,7 @@
+AppShelf 0.2.0 - reconstructed development checkpoint
+
+Build on Windows using .NET 10 SDK: ./build.ps1
+To publish the portable application: ./build.ps1 -Publish
+Keep the full data directory when updating an existing profile.
+Folder taskbar buttons and desktop single-click require AppShelf running.
+See LICENSE and THIRD-PARTY-NOTICES.txt for license terms.

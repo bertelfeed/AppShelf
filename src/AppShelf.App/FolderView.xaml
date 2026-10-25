@@ -1,0 +1,84 @@
+<UserControl x:Class="AppShelf.App.FolderView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Foreground="{DynamicResource TextBrush}" AllowDrop="True" Drop="BackgroundDrop" DragOver="BackgroundDragOver"
+ PreviewKeyDown="OnKeyDown" Loaded="OnLoaded" Unloaded="OnUnloaded">
+ <UserControl.Resources>
+  <Style x:Key="TileButton" TargetType="Button">
+   <Setter Property="Width" Value="100"/><Setter Property="Height" Value="108"/>
+   <Setter Property="Margin" Value="2"/><Setter Property="Padding" Value="4"/>
+   <Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/>
+   <Setter Property="BorderThickness" Value="1"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+    <Border x:Name="Box" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="6">
+     <ContentPresenter Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+    </Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Box" Property="Background" Value="{DynamicResource HoverBrush}"/></Trigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.AccentColorBrushKey}}"/></Trigger>
+     <Trigger Property="IsPressed" Value="True"><Setter TargetName="Box" Property="Opacity" Value="0.7"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+ </UserControl.Resources>
+ <Grid>
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <Grid Margin="0,0,0,20">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="200"/></Grid.ColumnDefinitions>
+   <Button x:Name="BackButton" Style="{StaticResource IconButton}" Click="BackClick" ToolTip="Назад (Alt+←)">
+    <TextBlock Style="{StaticResource Glyph}" Text="&#xE72B;"/>
+   </Button>
+   <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center">
+    <StackPanel x:Name="BreadcrumbPanel" Orientation="Horizontal"/>
+   </ScrollViewer>
+   <Grid Grid.Column="2" Margin="12,0,0,0">
+    <TextBox x:Name="SearchBox" AutomationProperties.Name="Поиск приложений и папок" Padding="30,7,8,7" TextChanged="SearchChanged"/>
+    <TextBlock Style="{StaticResource Glyph}" Text="&#xE721;" HorizontalAlignment="Left" Margin="9,0,0,0" IsHitTestVisible="False"/>
+    <TextBlock x:Name="SearchHint" Text="Поиск" Foreground="{DynamicResource MutedBrush}" Margin="31,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+   </Grid>
+  </Grid>
+  <Grid Grid.Row="1" Margin="2,0,2,24">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <StackPanel>
+    <TextBlock x:Name="FolderTitle" Text="Мои папки" FontSize="28" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+    <TextBlock x:Name="FolderSubtitle" Margin="0,5,0,0" Foreground="{DynamicResource MutedBrush}" FontSize="12"/>
+   </StackPanel>
+   <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+    <Button x:Name="AddButton" Click="AddClick" Padding="12,7" Margin="0,0,8,0" ToolTip="Добавить приложение или папку">
+     <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Glyph}" Margin="0,0,8,0"/><TextBlock Text="Добавить"/></StackPanel>
+    </Button>
+    <Button x:Name="PinButton" Click="PinClick" Padding="10,7" Margin="0,0,4,0" ToolTip="Панель задач и рабочий стол" AutomationProperties.Name="Разместить папку">
+     <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Glyph}" Text="&#xE718;" Margin="0,0,7,0"/><TextBlock Text="Разместить"/></StackPanel>
+    </Button>
+    <Button x:Name="FolderSettingsButton" Style="{StaticResource IconButton}" Click="FolderSettingsClick" ToolTip="Параметры этой папки" AutomationProperties.Name="Параметры папки"><TextBlock Style="{StaticResource Glyph}" Text="&#xE713;"/></Button>
+    <Button Style="{StaticResource IconButton}" Click="MoreClick" ToolTip="Действия с папкой"><TextBlock Style="{StaticResource Glyph}" Text="&#xE712;"/></Button>
+   </StackPanel>
+  </Grid>
+  <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,12" CanContentScroll="False">
+   <Grid Background="Transparent">
+    <ItemsControl x:Name="TileGrid" KeyboardNavigation.DirectionalNavigation="Cycle">
+     <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel ItemWidth="104" ItemHeight="112"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+     <ItemsControl.ItemTemplate><DataTemplate>
+      <Button Style="{StaticResource TileButton}" ToolTip="{Binding Description}" AutomationProperties.Name="{Binding Name}"
+       Click="TileClick" MouseRightButtonUp="TileContext" PreviewMouseLeftButtonDown="DragStart" PreviewMouseMove="DragMove"
+       AllowDrop="True" Drop="TileDrop" DragOver="TileDragOver" Tag="{Binding}">
+       <StackPanel VerticalAlignment="Center">
+        <Grid Height="58"><Image Source="{Binding Icon}" Width="{Binding IconSize}" Height="{Binding IconSize}" RenderOptions.BitmapScalingMode="HighQuality"/></Grid>
+        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontSize="12" TextAlignment="Center" Margin="0,7,0,0"
+         TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="32" LineHeight="16"
+         Visibility="{Binding ShowLabel, Converter={StaticResource BoolVisibility}}"/>
+       </StackPanel>
+      </Button>
+     </DataTemplate></ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <StackPanel x:Name="EmptyPanel" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="360" Margin="20">
+     <TextBlock x:Name="EmptyGlyph" Style="{StaticResource Glyph}" Text="&#xE8B7;" FontSize="48" Foreground="{DynamicResource MutedBrush}"/>
+     <TextBlock x:Name="EmptyTitle" Text="Здесь будет ваша папка" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" Margin="0,20,0,8"/>
+     <TextBlock x:Name="EmptyText" Text="Добавьте приложения или перетащите сюда ярлыки. Всё нужное будет рядом." TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" LineHeight="20"/>
+     <Button x:Name="EmptyAdd" Content="Добавить приложения" Click="LibraryClick" HorizontalAlignment="Center" Padding="18,8" Margin="0,20,0,0"/>
+    </StackPanel>
+   </Grid>
+  </ScrollViewer>
+  <TextBlock x:Name="StatusText" Grid.Row="3" Text="Перетащите приложение на приложение, чтобы создать папку" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="2,6,0,0" TextTrimming="CharacterEllipsis"/>
+ </Grid>
+</UserControl>

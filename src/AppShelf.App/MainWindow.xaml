@@ -1,0 +1,54 @@
+<Window x:Class="AppShelf.App.MainWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:local="clr-namespace:AppShelf.App"
+ Title="AppShelf" Width="1100" Height="740" MinWidth="860" MinHeight="560"
+ WindowStartupLocation="CenterScreen" FontFamily="Segoe UI Variable Text" FontSize="14"
+ Background="{DynamicResource CanvasBrush}" Foreground="{DynamicResource TextBrush}"
+ Closing="OnClosing" Icon="Assets/AppShelf.ico">
+ <Window.Resources>
+  <Style x:Key="NavButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+   <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+   <Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="Padding" Value="14,11"/>
+   <Setter Property="Margin" Value="0,3"/><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+  </Style>
+  <HierarchicalDataTemplate DataType="{x:Type local:FolderNode}" ItemsSource="{Binding Children}">
+   <StackPanel Orientation="Horizontal" Margin="0,5">
+    <TextBlock Text="&#xE8B7;" Style="{StaticResource Glyph}" Margin="0,0,10,0" Foreground="{DynamicResource MutedBrush}"/>
+    <TextBlock Text="{Binding Name}" MaxWidth="145" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+   </StackPanel>
+  </HierarchicalDataTemplate>
+ </Window.Resources>
+ <Grid Margin="12,10,12,12">
+  <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+  <Grid Margin="0,0,12,0">
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <StackPanel Orientation="Horizontal" Margin="14,16,0,25">
+    <Image Source="Assets/AppShelf.ico" Width="30" Height="30" RenderOptions.BitmapScalingMode="HighQuality"/>
+    <TextBlock Text="AppShelf" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,0,0"/>
+   </StackPanel>
+   <Button x:Name="HomeButton" Grid.Row="1" Style="{StaticResource NavButton}" Click="HomeClick" AutomationProperties.Name="Мои папки">
+    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="Мои папки"/></StackPanel>
+   </Button>
+   <Grid Grid.Row="2" Margin="0,18,0,0">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Grid Margin="14,0,5,8">
+     <TextBlock Text="ПАПКИ" FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+     <Button HorizontalAlignment="Right" Style="{StaticResource IconButton}" Click="NewFolderClick" ToolTip="Создать папку"><TextBlock Text="&#xE710;" Style="{StaticResource Glyph}" FontSize="12"/></Button>
+    </Grid>
+    <TreeView x:Name="FolderTree" Grid.Row="1" Background="Transparent" BorderThickness="0" SelectedItemChanged="FolderSelected" Padding="4,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+     <TreeView.ItemContainerStyle><Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}"><Setter Property="IsExpanded" Value="True"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Foreground" Value="{DynamicResource TextBrush}"/><Setter Property="AutomationProperties.Name" Value="{Binding Name}"/></Style></TreeView.ItemContainerStyle>
+    </TreeView>
+   </Grid>
+   <StackPanel Grid.Row="3">
+    <Border Height="1" Margin="12,12" Background="{DynamicResource LineBrush}"/>
+    <Button Style="{StaticResource NavButton}" Click="BackupClick"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="Резервные копии"/></StackPanel></Button>
+    <Button Style="{StaticResource NavButton}" Click="SettingsClick"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="Параметры"/></StackPanel></Button>
+    <TextBlock Text="Ваши приложения. В своём порядке." FontSize="10" Foreground="{DynamicResource MutedBrush}" Margin="14,14,0,7"/>
+   </StackPanel>
+  </Grid>
+  <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="28,24,24,20">
+   <local:FolderView x:Name="Browser"/>
+  </Border>
+ </Grid>
+</Window>

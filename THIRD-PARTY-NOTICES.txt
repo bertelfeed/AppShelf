@@ -1,0 +1,15 @@
+AppShelf uses Microsoft .NET 10 and Windows Presentation Foundation (WPF).
+The self-contained distribution includes Microsoft runtime components.
+See the accompanying files in licenses/ for their license terms and
+third-party notices. Some Microsoft runtime components may be
+subject to separate terms as identified in those files.
+
+Official sources:
+https://github.com/dotnet/runtime
+https://github.com/dotnet/wpf
+
+Windows icons are obtained from applications installed on the user's computer
+at runtime. Windows fonts and system APIs are provided by the operating system.
+The AppShelf application icon is an original vector-derived asset.
+
+AppShelf does not include source code, images or text copied from AppGroup.
