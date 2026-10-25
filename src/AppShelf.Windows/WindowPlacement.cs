@@ -64,6 +64,10 @@ public static class WindowPlacement
     }
 
     public static IntPtr ForegroundWindow() => GetForegroundWindow();
+    /// <summary>Physical state of the left, right or middle button, also during a drag from another app.</summary>
+    public static bool MouseButtonDown() =>
+        (GetAsyncKeyState(0x01) & 0x8000) != 0 || (GetAsyncKeyState(0x02) & 0x8000) != 0 || (GetAsyncKeyState(0x04) & 0x8000) != 0;
+    [DllImport("user32.dll")] private static extern short GetAsyncKeyState(int key);
     public static int DoubleClickTime => (int)GetDoubleClickTime();
 
     /// <summary>The desktop icon view or its Progman/WorkerW host.</summary>

@@ -70,7 +70,7 @@ public static class ShelfTree
                     throw new InvalidDataException("Некорректный элемент.");
                 if (!item.IsFolder && (item.Children.Count > 0 || string.IsNullOrWhiteSpace(item.Target)))
                     throw new InvalidDataException("У приложения должен быть адрес запуска и не может быть вложенных элементов.");
-                if (item.Settings is null || item.Settings.Columns is < 3 or > 8 ||
+                if (item.Settings is null || item.Settings.Columns is < 3 or > 8 || item.Settings.Rows is < 1 or > 8 ||
                     item.Settings.IconSize is < 24 or > 80 || !Enum.IsDefined(item.Settings.Appearance) ||
                     item.Settings.DesktopIconScale is < 50 or > 200 || item.Settings.TaskbarIconScale is < 50 or > 200 ||
                     !Enum.IsDefined(item.Settings.Face) || item.Settings.FaceSymbol is not { Length: <= 8 } ||

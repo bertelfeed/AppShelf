@@ -40,7 +40,7 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
                 "organize" => await OrganizeAsync(args),
                 "move_item" => MoveItem(Text(args, "item"), Text(args, "to_folder", required: false) ?? ""),
                 "rename_item" => RenameItem(Text(args, "item"), Text(args, "new_name")),
-                "remove_item" => RemoveItem(Text(args, "item")),
+                "remove_item" => await RemoveItemAsync(Text(args, "item")),
                 "place_folder" => await PlaceFolderAsync(args),
                 "set_folder_look" => SetLook(args),
                 "restore_desktop" => RestoreDesktop(args),
@@ -328,26 +328,8 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         return desktop.Concat(apps).Distinct(StringComparer.CurrentCultureIgnoreCase).Take(6).ToArray();
     }
 
-    /// <summary>
-    /// Shortcuts are copied into the profile so the app still starts after the desktop shortcut is tidied away
-    /// or deleted by hand; programs, files and folders are referenced where they are.
-    /// </summary>
-    private ShelfItem Materialize(DesktopEntry entry)
-    {
-        var item = ShelfItem.Application(entry.Name, entry.Path);
-        item.Origin = entry.Path;
-        var extension = Path.GetExtension(entry.Path).ToLowerInvariant();
-        if (entry.Kind != "folder" && ShortcutExtensions.Contains(extension))
-        {
-            var directory = Path.Combine(Data, "launchers");
-            Directory.CreateDirectory(directory);
-            var safe = string.Concat(entry.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
-            var copy = Path.Combine(directory, $"{(safe.Length > 80 ? safe[..80] : safe)}-{item.Id.ToString("N")[..8]}{extension}");
-            File.Copy(entry.Path, copy, true);
-            item.Target = copy;
-        }
-        return item;
-    }
+    private ShelfItem Materialize(DesktopEntry entry) =>
+        ShelfImport.FromPath(Data, entry.Path, entry.Name) ?? throw new ApiException($"«{entry.Name}» — это значок папки AppShelf, а не приложение.");
 
     private static ShelfItem FolderByPath(ShelfConfiguration config, string path, List<string>? created)
     {
@@ -412,16 +394,20 @@ public sealed class ShelfApi(ShelfSession session, FolderPublisher? publisher)
         return new { renamed = $"{old} → {name}" };
     }
 
-    private object RemoveItem(string reference)
+    private async Task<object> RemoveItemAsync(string reference)
     {
-        string? removed = null; var count = 0;
+        string? removed = null; var count = 0; var folders = new List<Guid>();
         session.Change(config =>
         {
             var item = ItemByPath(config, reference);
             removed = item.Name; count = ShelfTree.Walk([item]).Count(x => !x.IsFolder);
+            folders = ShelfTree.Walk([item]).Where(x => x.IsFolder).Select(x => x.Id).ToList();
             ShelfTree.Parent(config, item.Id)!.RemoveAll(x => x.Id == item.Id);
         });
-        return new { removed, apps_inside = count, note = "Программы и файлы на диске не тронуты; undo вернёт элемент." };
+        // A removed folder's desktop icon would open nothing, so it goes too.
+        if (publisher is not null)
+            foreach (var id in folders) await publisher.RemoveDesktopAsync(id);
+        return new { removed, apps_inside = count, note = "Программы и файлы на диске не тронуты; undo вернёт элемент, значок папки на рабочий стол вернёт place_folder." };
     }
 
     private async Task<object> PlaceFolderAsync(JsonObject args)

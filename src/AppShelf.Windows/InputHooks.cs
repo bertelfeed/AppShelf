@@ -88,7 +88,8 @@ public sealed class InputHooks
     private IntPtr MouseMessage(int code, IntPtr message, IntPtr information)
     {
         // Never consume input: the clicked application or desktop still receives the click.
-        if (code >= 0 && message.ToInt64() is 0x201 or 0x202 or 0x204 or 0x207 or 0x20B)
+        // Presses and releases of the left, right, middle and extra buttons.
+        if (code >= 0 && message.ToInt64() is 0x201 or 0x202 or 0x204 or 0x205 or 0x207 or 0x208 or 0x20B or 0x20C)
         {
             var point = Marshal.PtrToStructure<MouseInfo>(information).Point;
             var data = new MouseEvent((int)message.ToInt64(), point.X, point.Y);

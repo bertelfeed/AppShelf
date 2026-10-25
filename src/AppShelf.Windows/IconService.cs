@@ -73,7 +73,9 @@ public sealed class IconService : IDisposable
     private ImageSource? ReadIcon(string target)
     {
         var expanded = Environment.ExpandEnvironmentVariables(target);
-        var stamp = File.Exists(expanded) ? File.GetLastWriteTimeUtc(expanded).Ticks.ToString() : "";
+        // A folder's picture shows its contents, so it is re-read when the folder changes.
+        var stamp = File.Exists(expanded) ? File.GetLastWriteTimeUtc(expanded).Ticks.ToString()
+            : Directory.Exists(expanded) ? "folder-" + Directory.GetLastWriteTimeUtc(expanded).Ticks : "";
         var period = DateTime.UtcNow.Ticks / DiskLifetime.Ticks;
         var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(target + "|" + stamp + "|" + period)));
         var disk = Path.Combine(cachePath, key + ".png");
@@ -132,7 +134,10 @@ public sealed class IconService : IDisposable
         {
             var iid = typeof(IImageFactory).GUID;
             if (SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid, out factory) < 0) return null;
-            if (factory.GetImage(new NativeSize { Width = 256, Height = 256 }, 0x105, out bitmap) < 0 || bitmap == IntPtr.Zero) return null;
+            // Folders get Explorer's thumbnail (the folder with an app logo or pictures peeking out);
+            // everything else asks for the icon only (SIIGBF_ICONONLY), never a content preview.
+            var flags = Directory.Exists(path) ? 0x101u : 0x105u;
+            if (factory.GetImage(new NativeSize { Width = 256, Height = 256 }, flags, out bitmap) < 0 || bitmap == IntPtr.Zero) return null;
             if (GetObject(bitmap, Marshal.SizeOf<NativeBitmap>(), out var source) == 0 || source.Width <= 0 || source.Height <= 0 || source.Width > 1024 || source.Height > 1024) return null;
             var info = new BitmapInfo { Size = 40, Width = source.Width, Height = -source.Height, Planes = 1, BitCount = 32 };
             var stride = source.Width * 4;

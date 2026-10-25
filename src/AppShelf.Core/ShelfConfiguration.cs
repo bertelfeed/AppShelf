@@ -43,6 +43,8 @@ public sealed class FolderSettings
 {
     public Appearance Appearance { get; set; } = Appearance.System;
     public int Columns { get; set; } = 5;
+    /// <summary>Rows per page; more apps are paged like folders in the Start menu.</summary>
+    public int Rows { get; set; } = 4;
     public int IconSize { get; set; } = 40;
     public int DesktopIconScale { get; set; } = 100;
     public int TaskbarIconScale { get; set; } = 80;

@@ -135,6 +135,27 @@ internal static class Program
             var icon = icons.GetAsync(Path.Combine(Environment.SystemDirectory, "notepad.exe"));
             Expect(icon.Wait(8000), "Icon timed out"); Expect(icon.Result is { IsFrozen: true });
         });
+        Check("A folder shows what is inside it, as on the desktop", () =>
+        {
+            using var icons = new IconService(Path.Combine(root, "folder-thumb-cache"));
+            var withPicture = Path.Combine(root, "folder-thumb", "Pictures"); Directory.CreateDirectory(withPicture);
+            var red = BitmapSource.Create(64, 64, 96, 96, PixelFormats.Bgra32, null, Enumerable.Repeat(new byte[] { 0, 0, 255, 255 }, 64 * 64).SelectMany(x => x).ToArray(), 256);
+            using (var stream = File.Create(Path.Combine(withPicture, "red.png"))) { var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(red)); encoder.Save(stream); }
+            var empty = Path.Combine(root, "folder-thumb", "Empty"); Directory.CreateDirectory(empty);
+            int Reddish(string folder)
+            {
+                var task = icons.GetAsync(folder); Expect(task.Wait(15000) && task.Result is BitmapSource, "Folder picture timed out");
+                var image = new FormatConvertedBitmap((BitmapSource)task.Result!, PixelFormats.Bgra32, null, 0);
+                var pixels = new byte[image.PixelWidth * image.PixelHeight * 4]; image.CopyPixels(pixels, image.PixelWidth * 4, 0);
+                var count = 0; for (var i = 0; i < pixels.Length; i += 4) if (pixels[i + 2] > 200 && pixels[i + 1] < 60 && pixels[i] < 60 && pixels[i + 3] > 200) count++;
+                return count;
+            }
+            using var advanced = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced");
+            var iconsOnly = advanced?.GetValue("IconsOnly") is int value && value == 1;
+            var inside = Reddish(withPicture);
+            Expect(Reddish(empty) == 0, "An empty folder must not have content in its picture");
+            Expect(iconsOnly || inside > 50, $"The folder picture does not show its contents ({inside} red pixels)");
+        });
         Check("Refreshing icons reads them again instead of reusing the cache", () =>
         {
             using var icons = new IconService(Path.Combine(root, "icon-refresh"));
@@ -196,6 +217,35 @@ internal static class Program
             Expect(ShortcutRepair.FindMoved(missing) == Path.Combine(versions, "version-9f8e7d", "RobloxPlayerBeta.exe"), "Newest version was not picked: " + ShortcutRepair.FindMoved(missing));
             Expect(ShortcutRepair.FindMoved(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "NoSuchApp", "x.exe")) is null,
                 "Search must not scan a broad root like Program Files");
+        });
+        Check("A press outside closes the menu on release, a drag into the menu keeps it open", () =>
+        {
+            var now = DateTime.UtcNow; var desktop = new IntPtr(42);
+            var click = new DismissGate(); click.Arm(PopupDismissMonitor.Reason.OutsideClick, desktop);
+            Expect(click.Release(false, out _, out var at) && at == desktop, "A plain click outside did not close the menu");
+            var drag = new DismissGate(); drag.Arm(PopupDismissMonitor.Reason.OutsideClick, desktop);
+            Expect(!drag.ForegroundLost(desktop, true, now, out _, out _), "Explorer taking focus during the press closed the menu");
+            drag.Cancel(now);
+            Expect(!drag.Release(true, out _, out _), "Dropping into the menu closed it");
+            Expect(!drag.ForegroundLost(desktop, false, now.AddMilliseconds(100), out _, out _), "A late focus event right after the drop closed the menu");
+            Expect(drag.ForegroundLost(desktop, false, now.AddSeconds(1), out _, out _), "Switching windows later must close the menu again");
+            var held = new DismissGate();
+            Expect(!held.ForegroundLost(desktop, true, now, out _, out _) && held.Release(false, out var why, out _) && why == PopupDismissMonitor.Reason.ForegroundChanged,
+                "Focus lost with a button held must close on an outside release");
+            Expect(!new DismissGate().Release(false, out _, out _), "A release without a press outside must not close");
+        });
+        Check("The drop gap and the insertion bar follow the pointer", () =>
+        {
+            // 3 columns of 50×50 tiles, 7 apps on the page: rows of 3, 3, 1.
+            int Gap(double x, double y) => AppShelf.App.FolderGrid.InsertionIndex(new Point(x, y), 50, 50, 3, 7);
+            Expect(Gap(5, 10) == 0 && Gap(30, 10) == 1 && Gap(140, 10) == 3 && Gap(70, 60) == 4 && Gap(10, 120) == 6 && Gap(40, 120) == 7 && Gap(10, 400) == 7,
+                "Wrong gaps: " + string.Join(",", Gap(5, 10), Gap(30, 10), Gap(140, 10), Gap(70, 60), Gap(10, 120), Gap(40, 120), Gap(10, 400)));
+            Expect(AppShelf.App.FolderGrid.InsertionIndex(new Point(80, 80), 50, 50, 3, 0) == 0, "Empty folder must drop at 0");
+            Expect(AppShelf.App.FolderGrid.TileAt(new Point(75, 60), 50, 50, 3, 7) == 4 && AppShelf.App.FolderGrid.TileAt(new Point(75, 120), 50, 50, 3, 7) == -1 &&
+                AppShelf.App.FolderGrid.TileAt(new Point(160, 10), 50, 50, 3, 7) == -1, "Wrong tile under the pointer");
+            Expect(AppShelf.App.FolderGrid.IsOverCenter(new Point(75, 75), 50, 50) && !AppShelf.App.FolderGrid.IsOverCenter(new Point(52, 75), 50, 50), "Folder centre is wrong");
+            Expect(AppShelf.App.FolderGrid.GapPosition(4, 50, 50, 3, 7) == new Point(50, 50) && AppShelf.App.FolderGrid.GapPosition(7, 50, 50, 3, 7) == new Point(50, 100) &&
+                AppShelf.App.FolderGrid.GapPosition(6, 50, 50, 3, 6) == new Point(150, 50), "Insertion bar is placed wrongly");
         });
         Check("Resolve Win32 known-folder paths and preserve UWP identifiers", () =>
         {
@@ -264,8 +314,10 @@ internal static class Program
         Check("Folder look settings default for older files and reject invalid colours", () =>
         {
             var legacy = System.Text.Json.JsonSerializer.Deserialize<FolderSettings>("{\"Columns\":4}")!;
-            Expect(legacy.Face == FolderFace.Preview && legacy.FaceColor == "" && legacy.FaceSymbol == "" && legacy.FaceImage == "");
+            Expect(legacy.Face == FolderFace.Preview && legacy.FaceColor == "" && legacy.FaceSymbol == "" && legacy.FaceImage == "" && legacy.Rows == 4);
             var config = Example();
+            foreach (var rows in new[] { 0, 9 }) { config.Items[0].Settings.Rows = rows; Reject(() => ShelfTree.Validate(config)); }
+            config.Items[0].Settings.Rows = 1; ShelfTree.Validate(config);
             config.Items[0].Settings.FaceColor = "#0067C0"; config.Items[0].Settings.Face = FolderFace.Symbol; config.Items[0].Settings.FaceSymbol = "";
             ShelfTree.Validate(config);
             foreach (var invalid in new[] { "red", "#12345G", "#12345", "#0067C0FF" })
@@ -474,6 +526,9 @@ internal static class Program
             popup.UpdateLayout();
             expect(popup.Title == nested.Name && Descendants(popup).OfType<System.Windows.Controls.Image>().Single().Width == 80,
                 "Nested menu did not use its own taskbar scale");
+            expect(Descendants(popup).OfType<System.Windows.Controls.TextBlock>().Any(x => x.Text == "") &&
+                System.Windows.Automation.AutomationProperties.GetName(Descendants(popup).OfType<System.Windows.Controls.Button>().First()).StartsWith("Назад"),
+                "A nested folder shows no back arrow");
             popup.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,
                 PresentationSource.FromVisual(popup), Environment.TickCount, System.Windows.Input.Key.Escape)
                 { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent });
@@ -493,6 +548,64 @@ internal static class Program
                 PumpUntil(() => dismissed);
             }
             finally { other.Close(); inactive.Close(); }
+        });
+        check("More apps than columns × rows are paged with the wheel, keys and dots", () =>
+        {
+            var paged = ShelfItem.Folder("Paging check"); paged.Settings.Columns = 3; paged.Settings.Rows = 2;
+            for (var i = 0; i < 7; i++) paged.Children.Add(ShelfItem.Application("App " + i, Path.Combine(Environment.SystemDirectory, "notepad.exe")));
+            session.Change(config => config.Items.Add(paged));
+            var popup = application.Windows.OfType<AppShelf.App.FolderPopup>().Single();
+            try
+            {
+                popup.Open(paged.Id); popup.UpdateLayout();
+                int Tiles() { popup.UpdateLayout(); return Descendants(popup).OfType<System.Windows.Controls.Image>().Count(); }
+                expect(popup.PageCount == 2 && popup.Page == 0 && Tiles() == 6, $"First page is wrong: {popup.PageCount} pages, {Tiles()} tiles");
+                expect(Descendants(popup).OfType<System.Windows.Shapes.Ellipse>().Count() == 2, "Page dots are missing");
+                var fullHeight = popup.Height;
+                popup.RaiseEvent(new System.Windows.Input.MouseWheelEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount, -120)
+                    { RoutedEvent = UIElement.PreviewMouseWheelEvent });
+                expect(popup.Page == 1 && Tiles() == 1 && popup.Height == fullHeight, "Wheel did not turn the page or the window jumped");
+                popup.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, PresentationSource.FromVisual(popup),
+                    Environment.TickCount, System.Windows.Input.Key.PageUp) { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent });
+                expect(popup.Page == 0 && Tiles() == 6, "PageUp did not go back");
+                var dot = Descendants(popup).OfType<System.Windows.Controls.Border>()
+                    .Single(x => System.Windows.Automation.AutomationProperties.GetName(x) == "Страница 2 из 2");
+                dot.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount, System.Windows.Input.MouseButton.Left)
+                    { RoutedEvent = UIElement.MouseLeftButtonUpEvent });
+                expect(popup.Page == 1, "Clicking a page dot did not turn the page");
+                popup.Hide(); popup.Open(paged.Id);
+                expect(popup.Page == 0, "Reopening must start on the first page");
+            }
+            finally { popup.Hide(); session.Change(config => config.Items.RemoveAll(x => x.Id == paged.Id)); }
+        });
+        check("Shortcuts dropped into the menu land at the chosen place; tiles can be reordered and moved into folders", () =>
+        {
+            var target = ShelfItem.Folder("Drop check");
+            var a = ShelfItem.Application("A", Path.Combine(Environment.SystemDirectory, "notepad.exe"));
+            var b = ShelfItem.Application("B", Path.Combine(Environment.SystemDirectory, "notepad.exe"));
+            var inner = ShelfItem.Folder("Inner");
+            target.Children.AddRange([a, b, inner]);
+            session.Change(config => config.Items.Add(target));
+            var dropped = Path.Combine(root, "drop"); Directory.CreateDirectory(dropped);
+            var site = Path.Combine(dropped, "Site.url"); File.WriteAllText(site, "[InternetShortcut]\r\nURL=https://example.com/\r\n");
+            var popup = application.Windows.OfType<AppShelf.App.FolderPopup>().Single();
+            try
+            {
+                popup.Open(target.Id);
+                string Names() => string.Join(",", ShelfTree.Find(session.Configuration, target.Id)!.Children.Select(x => x.Name));
+                expect(popup.DropPaths([site], 1) == 1 && Names() == "A,Site,B,Inner", "Dropped shortcut is not at the gap: " + Names());
+                var added = ShelfTree.Find(session.Configuration, target.Id)!.Children[1];
+                expect(added.Origin == site && added.Target.StartsWith(session.Store.DirectoryPath) && File.Exists(site), "The desktop shortcut was not copied or was removed");
+                popup.DropPaths([site], 4);
+                expect(Names() == "A,B,Inner,Site", "Dropping the same shortcut again added a twin: " + Names());
+                popup.DropItem(a.Id, 3);
+                expect(Names() == "B,Inner,A,Site", "Reordering by drag is wrong: " + Names());
+                popup.DropItem(b.Id, 0, inner.Id);
+                expect(Names() == "Inner,A,Site" && ShelfTree.Find(session.Configuration, inner.Id)!.Children.Single().Name == "B", "Drop onto a folder did not move into it");
+                popup.DropItem(inner.Id, 0, inner.Id);
+                expect(Names() == "Inner,A,Site", "A folder was moved into itself");
+            }
+            finally { popup.Hide(); session.Change(config => config.Items.RemoveAll(x => x.Id == target.Id)); }
         });
         check("Title click closes the root folder without adding menu controls", () =>
         {

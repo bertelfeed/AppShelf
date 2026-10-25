@@ -1,5 +1,5 @@
-# AppShelf 0.4.0
+# AppShelf 0.5.0
 
-MCP desktop organization and automatic shortcut repair.
+Paged menus, drag and drop and nested back navigation.
 
 Recovered development checkpoint. Public version numbers were assigned during history reconstruction; original source backups were preserved.

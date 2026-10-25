@@ -75,8 +75,19 @@ public sealed class ConfigurationStore(string directory)
                 JsonSerializer.Serialize(stream, config, JsonOptions);
                 stream.Flush(true);
             }
-            if (File.Exists(FilePath)) File.Replace(temporary, FilePath, recoveredFromBackup ? null : BackupPath, true);
-            else File.Move(temporary, FilePath);
+            // OneDrive, indexers and antivirus open the file for a moment after each change; retry briefly
+            // instead of failing the user's edit.
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(FilePath)) File.Replace(temporary, FilePath, recoveredFromBackup ? null : BackupPath, true);
+                    else File.Move(temporary, FilePath);
+                    break;
+                }
+                catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && attempt < 8 && File.Exists(temporary))
+                { Thread.Sleep(40 * attempt); }
+            }
             recoveredFromBackup = false;
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }

@@ -192,7 +192,7 @@ public sealed class SettingsDialog : ShelfDialog
     public SettingsDialog() : base("Параметры AppShelf", 520)
     {
         var config = App.Current.Session.Configuration;
-        Heading("Параметры приложения", "AppShelf · 0.4.0");
+        Heading("Параметры приложения", "AppShelf · 0.5.0");
         Body.Children.Add(new TextBlock { Text = "Тема редактора", Margin = new Thickness(0, 8, 0, 8) });
         var appearance = new ComboBox { ItemsSource = new[] { "Как в Windows", "Светлая", "Тёмная" }, SelectedIndex = (int)config.Appearance };
         Body.Children.Add(appearance);
@@ -239,7 +239,10 @@ public sealed class FolderSettingsDialog : ShelfDialog
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(5, 1, 5, 2) };
         previewTitle.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         var previewTiles = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Left };
-        var previewContent = new StackPanel(); previewContent.Children.Add(previewTitle); previewContent.Children.Add(previewTiles);
+        var previewDots = new ContentControl { Focusable = false };
+        var previewGrid = new DockPanel(); DockPanel.SetDock(previewDots, Dock.Right);
+        previewGrid.Children.Add(previewDots); previewGrid.Children.Add(previewTiles);
+        var previewContent = new StackPanel(); previewContent.Children.Add(previewTitle); previewContent.Children.Add(previewGrid);
         var preview = new Border { Child = previewContent, CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1), Padding = new Thickness(5, 3, 5, 5),
             HorizontalAlignment = HorizontalAlignment.Center, IsHitTestVisible = false, Focusable = false };
         System.Windows.Automation.AutomationProperties.SetName(preview, "Предпросмотр меню папки");
@@ -316,8 +319,25 @@ public sealed class FolderSettingsDialog : ShelfDialog
         Body.Children.Add(new TextBlock { Text = "Тема меню", Margin = new Thickness(0, 18, 0, 8) });
         var appearance = new ComboBox { ItemsSource = new[] { "Как в Windows", "Светлая", "Тёмная" }, SelectedIndex = (int)settings.Appearance };
         Body.Children.Add(appearance);
-        Body.Children.Add(new TextBlock { Text = "Столбцов", Margin = new Thickness(0, 18, 0, 8) });
-        var columns = new ComboBox { ItemsSource = Enumerable.Range(3, 6).ToArray(), SelectedItem = settings.Columns }; Body.Children.Add(columns);
+        // Grid size: more apps than columns × rows are paged like Start menu folders.
+        var size = new Grid { Margin = new Thickness(0, 18, 0, 0) };
+        size.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
+        size.ColumnDefinitions.Add(new() { Width = new GridLength(16) });
+        size.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
+        ComboBox SizeBox(string label, int column, IEnumerable<int> range, int value)
+        {
+            var panel = new StackPanel(); Grid.SetColumn(panel, column);
+            panel.Children.Add(new TextBlock { Text = label, Margin = new Thickness(0, 0, 0, 8) });
+            var box = new ComboBox { ItemsSource = range.ToArray(), SelectedItem = value };
+            System.Windows.Automation.AutomationProperties.SetName(box, label);
+            panel.Children.Add(box); size.Children.Add(panel); return box;
+        }
+        var columns = SizeBox("Столбцов", 0, Enumerable.Range(3, 6), settings.Columns);
+        var rows = SizeBox("Строк на странице", 2, Enumerable.Range(1, 8), settings.Rows);
+        Body.Children.Add(size);
+        var pagingHint = new TextBlock { Text = "Если приложений больше, меню листается колесом мыши, PageUp/PageDown или точками справа.",
+            TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0), FontSize = 12 };
+        pagingHint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush"); Body.Children.Add(pagingHint);
         Slider AddScale(string label, int value)
         {
             var row = new DockPanel { Margin = new Thickness(0, 18, 0, 8) };
@@ -340,7 +360,7 @@ public sealed class FolderSettingsDialog : ShelfDialog
         FolderSettings Draft(FolderSettings current) => new()
         {
             Appearance = (Appearance)appearance.SelectedIndex,
-            Columns = (int)columns.SelectedItem, IconSize = current.IconSize,
+            Columns = (int)columns.SelectedItem, Rows = (int)rows.SelectedItem, IconSize = current.IconSize,
             DesktopIconScale = (int)Math.Round(desktopScale.Value), TaskbarIconScale = (int)Math.Round(taskbarScale.Value),
             ShowLabels = labels.IsChecked == true, CloseAfterLaunch = close.IsChecked == true,
             CloseOnFocusLost = outside.IsChecked == true, ShowOnTaskbar = current.ShowOnTaskbar,
@@ -377,17 +397,20 @@ public sealed class FolderSettingsDialog : ShelfDialog
             preview.Resources["MutedBrush"] = new SolidColorBrush(dark ? Color.FromRgb(0xB8, 0xB8, 0xB8) : Color.FromRgb(0x61, 0x61, 0x61));
             preview.Background = new SolidColorBrush(dark ? Color.FromRgb(0x2C, 0x2C, 0x2C) : Color.FromRgb(0xF3, 0xF3, 0xF3));
             preview.BorderBrush = new SolidColorBrush(dark ? Color.FromArgb(0x33, 255, 255, 255) : Color.FromArgb(0x1F, 0, 0, 0));
-            var items = folder.Children.Take(draft.Columns * 2).ToList();
+            // The first page exactly as the menu shows it, with the page dots on the right when there is more.
+            var items = folder.Children.Take(FolderGrid.PageSize(draft)).ToList();
             var (tileWidth, _) = FolderGrid.TileSize(draft, desktop);
-            previewTiles.Width = FolderGrid.Columns(draft, items.Count) * tileWidth;
+            previewTiles.Width = FolderGrid.Columns(draft, folder.Children.Count) * tileWidth;
             previewTiles.Children.Clear();
             var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
             foreach (var item in items) previewTiles.Children.Add(FolderGrid.Tile(item, draft, desktop, pixelsPerDip, dark));
+            previewDots.Content = FolderGrid.Dots(FolderGrid.Pages(draft, folder.Children.Count), 0, null);
             previewContent.Children.Remove(empty);
             if (items.Count == 0) previewContent.Children.Add(empty);
         }
         appearance.SelectionChanged += (_, _) => UpdatePreview();
         columns.SelectionChanged += (_, _) => UpdatePreview();
+        rows.SelectionChanged += (_, _) => UpdatePreview();
         labels.Click += (_, _) => UpdatePreview();
         previewDesktop.Checked += (_, _) => UpdatePreview();
         previewTaskbar.Checked += (_, _) => UpdatePreview();
