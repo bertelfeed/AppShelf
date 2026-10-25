@@ -10,5 +10,7 @@
     <ProjectReference Include="../../src/AppShelf.Core/AppShelf.Core.csproj" />
     <ProjectReference Include="../../src/AppShelf.Windows/AppShelf.Windows.csproj" />
     <ProjectReference Include="../../src/AppShelf.App/AppShelf.App.csproj" />
+    <!-- Built first so the protocol check can start the real server executable. -->
+    <ProjectReference Include="../../src/AppShelf.Mcp/AppShelf.Mcp.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>

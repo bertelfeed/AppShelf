@@ -66,7 +66,7 @@ public static class ShelfTree
                 if (item is null || item.Id == Guid.Empty || !ids.Add(item.Id) || ids.Count > 20000)
                     throw new InvalidDataException("Некорректные или повторяющиеся идентификаторы.");
                 if (!Enum.IsDefined(item.Kind) || string.IsNullOrWhiteSpace(item.Name) || item.Name.Length > 200 ||
-                    item.Children is null || item.Target is null || item.Arguments is null || item.IconPath is null || item.WorkingDirectory is null)
+                    item.Children is null || item.Target is null || item.Arguments is null || item.IconPath is null || item.WorkingDirectory is null || item.Origin is not { Length: <= 1000 })
                     throw new InvalidDataException("Некорректный элемент.");
                 if (!item.IsFolder && (item.Children.Count > 0 || string.IsNullOrWhiteSpace(item.Target)))
                     throw new InvalidDataException("У приложения должен быть адрес запуска и не может быть вложенных элементов.");

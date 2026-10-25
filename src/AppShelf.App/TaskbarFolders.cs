@@ -151,9 +151,9 @@ public sealed class FolderTaskbarWindow : Window
         {
             var button = new System.Windows.Shell.ThumbButtonInfo { ImageSource = await IconOf(app), Description = app.Name, DismissWhenClicked = true };
             var target = app;
-            button.Click += (_, _) =>
+            button.Click += async (_, _) =>
             {
-                try { ShellIntegration.Launch(target); }
+                try { await App.Current.LaunchAsync(target); }
                 catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { }
                 catch (Exception ex) { App.Current.Report(ex); }
             };

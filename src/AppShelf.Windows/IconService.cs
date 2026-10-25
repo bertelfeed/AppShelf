@@ -21,7 +21,8 @@ public sealed class IconService : IDisposable
     private static readonly TimeSpan DiskLifetime = TimeSpan.FromDays(7);
     public IconService(string directory)
     {
-        cachePath = Path.Combine(directory, "icons-v2");
+        // v3: small icons are no longer cached inside the Shell's 256 px frame.
+        cachePath = Path.Combine(directory, "icons-v3");
         Directory.CreateDirectory(cachePath);
         var worker = new Thread(() => { foreach (var action in jobs.GetConsumingEnumerable()) action(); })
             { IsBackground = true, Name = "AppShelf shell icons" };
@@ -37,6 +38,9 @@ public sealed class IconService : IDisposable
         return cache.AddOrUpdate(target, path => Load(path, now), (path, entry) =>
             now - entry.Created < MemoryLifetime || !entry.Icon.IsCompleted ? entry : Load(path, now)).Icon;
     }
+
+    /// <summary>Forgets one target's icon after its shortcut was rewritten in place.</summary>
+    public void Forget(string target) => cache.TryRemove(target, out _);
 
     /// <summary>Forgets every cached icon so the next request reads it again from Windows.</summary>
     public void Clear()
@@ -139,6 +143,7 @@ public sealed class IconService : IDisposable
             for (var i = 3; i < pixels.Length; i += 4) if (pixels[i] != 0) { hasAlpha = true; break; }
             if (!hasAlpha) for (var i = 3; i < pixels.Length; i += 4) pixels[i] = 255;
             var result = BitmapSource.Create(source.Width, source.Height, 96, 96, PixelFormats.Bgra32, null, pixels, stride);
+            if (SmallIconBounds(pixels, source.Width, source.Height) is { } bounds) result = new CroppedBitmap(result, bounds);
             result.Freeze(); return result;
         }
         catch (COMException) { return null; }
@@ -149,6 +154,45 @@ public sealed class IconService : IDisposable
             if (factory is not null) Marshal.FinalReleaseComObject(factory);
         }
     }
+    /// <summary>
+    /// When an icon has no large image (Steam shortcuts often carry only 32 px), the Shell answers a 256 px
+    /// request with the small icon in the middle of a plain frame or of transparent padding. Returns the
+    /// square around that icon so it fills the tile like every other app; null for a normal large icon.
+    /// </summary>
+    public static Int32Rect? SmallIconBounds(byte[] pixels, int width, int height)
+    {
+        if (width < 96 || height < 96) return null;
+        uint At(int x, int y) => BitConverter.ToUInt32(pixels, (y * width + x) * 4);
+        static bool Near(uint a, uint b)
+        {
+            for (var shift = 0; shift < 32; shift += 8)
+                if (Math.Abs((int)((a >> shift) & 0xFF) - (int)((b >> shift) & 0xFF)) > 6) return false;
+            return true;
+        }
+        var fill = At(width / 8, height / 8);
+        int[] probes = [width / 8, width / 2, width * 7 / 8];
+        foreach (var x in probes) foreach (var y in probes)
+            if ((x != width / 2 || y != height / 2) && !Near(At(x, y), fill)) return null;
+        // A full-bleed icon also has a uniform background; the frame is told apart by its border,
+        // or the padding by being fully transparent.
+        var transparent = (fill >> 24) == 0;
+        if (!transparent && Near(At(0, height / 2), fill) && Near(At(width / 2, 0), fill) && Near(At(1, height / 2), fill)) return null;
+        int left = width, top = height, right = -1, bottom = -1;
+        for (var y = height / 16; y < height * 15 / 16; y++)
+            for (var x = width / 16; x < width * 15 / 16; x++)
+            {
+                var pixel = At(x, y);
+                if (transparent ? (pixel >> 24) <= 16 : Near(pixel, fill)) continue;
+                left = Math.Min(left, x); right = Math.Max(right, x); top = Math.Min(top, y); bottom = Math.Max(bottom, y);
+            }
+        if (right < 0) return null;
+        var size = Math.Max(right - left + 1, bottom - top + 1);
+        if (size > Math.Min(width, height) / 2) return null;
+        var centerX = (left + right + 1) / 2; var centerY = (top + bottom + 1) / 2;
+        var x0 = Math.Clamp(centerX - size / 2, 0, width - size); var y0 = Math.Clamp(centerY - size / 2, 0, height - size);
+        return new Int32Rect(x0, y0, size, size);
+    }
+
     [StructLayout(LayoutKind.Sequential)] private struct NativeSize { public int Width, Height; }
     [StructLayout(LayoutKind.Sequential)] private struct NativeBitmap { public int Type, Width, Height, WidthBytes; public ushort Planes, BitsPixel; public IntPtr Bits; }
     [StructLayout(LayoutKind.Sequential)] private struct BitmapInfo

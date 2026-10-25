@@ -10,6 +10,9 @@ public partial class App : Application
     public FolderPublisher Publisher { get; private set; } = null!;
     public TaskbarFolders TaskbarFolders { get; private set; } = null!;
     public DesktopSingleClick? DesktopClicks { get; private set; }
+    public ShelfApi? Api { get; private set; }
+    public ShelfRepair? Repair { get; private set; }
+    private readonly CancellationTokenSource apiStop = new();
     private SingleInstance? instance;
     private TrayIcon? tray;
     private MainWindow? editor;
@@ -40,8 +43,17 @@ public partial class App : Application
             }
             ShellIntegration.Initialize();
             Session = new ShelfSession(directory);
+            // Shortcuts that their apps rewrote since the last run: refresh AppShelf's copies before icons are read.
+            foreach (var item in ShelfTree.Walk(Session.Configuration.Items)) ShellIntegration.RefreshShortcutCopy(item);
             Theme.Apply(Session.Configuration.Appearance);
             Publisher = new FolderPublisher(Session);
+            Repair = new ShelfRepair(Session);
+            // Moved programs are found shortly after start, then every half hour and on every launch.
+            _ = Dispatcher.InvokeAsync(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                try { await Repair.CheckAllAsync(); } catch (Exception ex) { Log(ex); }
+            });
             TaskbarFolders = new TaskbarFolders(Session);
             try { DesktopClicks = new DesktopSingleClick(Session.Store.DirectoryPath, id => ShowFolder(id, true, toggle: true)) { Error = Log }; }
             catch (Exception ex) { Log(ex); }
@@ -49,6 +61,9 @@ public partial class App : Application
             SystemEvents.UserPreferenceChanged += PreferenceChanged;
             tray = new TrayIcon(() => ShowEditor(), BuildTrayMenu);
             _ = instance.ListenAsync(message => Dispatcher.InvokeAsync(() => HandleCommand(message)));
+            // Requests from the MCP server run on the UI thread like any edit in the editor.
+            Api = new ShelfApi(Session, Publisher);
+            _ = ShelfApiChannel.ListenAsync(directory, (tool, args) => Dispatcher.InvokeAsync(() => Api.HandleAsync(tool, args)).Task.Unwrap(), apiStop.Token);
             HandleCommand(command);
             if (Session.Store.RecoveryMessage is { } recovery) MessageBox.Show(recovery, "AppShelf", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -101,6 +116,13 @@ public partial class App : Application
         popup.Owner = editor is { IsVisible: true } ? editor : null;
         popup.Open(id, fromDesktop);
     }
+    /// <summary>Starts an app from a folder; a program that moved is found first.</summary>
+    public async Task LaunchAsync(ShelfItem item, bool elevated = false)
+    {
+        var ready = Repair is null ? item : await Repair.PrepareAsync(item);
+        ShellIntegration.Launch(ready, elevated);
+    }
+
     public void HideFolder(Guid id) { if (popup?.RootFolderId == id) popup.Hide(); }
 
     private System.Windows.Controls.ContextMenu BuildTrayMenu()
@@ -142,6 +164,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         IsExiting = true;
+        apiStop.Cancel();
         SystemEvents.UserPreferenceChanged -= PreferenceChanged;
         tray?.Dispose();
         TaskbarFolders?.Dispose();

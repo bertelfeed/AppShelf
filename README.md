@@ -1,5 +1,5 @@
-# AppShelf 0.2.0
+# AppShelf 0.4.0
 
-Initial nested folders, editor, desktop/taskbar menus and independent scales.
+MCP desktop organization and automatic shortcut repair.
 
 Recovered development checkpoint. Public version numbers were assigned during history reconstruction; original source backups were preserved.

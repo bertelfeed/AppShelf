@@ -20,8 +20,12 @@ try {
     if ($Publish) {
         & dotnet publish src/AppShelf.App/AppShelf.App.csproj -c Release -r win-x64 --self-contained true "-p:RuntimeFrameworkVersion=$RuntimeVersion" -p:UseSharedCompilation=false -p:NuGetAudit=false -m:1 -o artifacts/AppShelf
         if ($LASTEXITCODE -ne 0) { throw 'Publish failed. Close running AppShelf before rebuilding.' }
+        # The MCP server ships next to AppShelf.exe and shares its runtime files.
+        & dotnet publish src/AppShelf.Mcp/AppShelf.Mcp.csproj -c Release -r win-x64 --self-contained true "-p:RuntimeFrameworkVersion=$RuntimeVersion" -p:UseSharedCompilation=false -p:NuGetAudit=false -m:1 -o artifacts/AppShelf
+        if ($LASTEXITCODE -ne 0) { throw 'MCP server publish failed. Close running AppShelf.Mcp before rebuilding.' }
         New-Item -ItemType File -Path 'artifacts\AppShelf\portable.flag' -Force | Out-Null
         Copy-Item -LiteralPath 'QUICKSTART.txt' -Destination 'artifacts\AppShelf\Прочитай меня.txt' -Force
+        Copy-Item -LiteralPath 'MCP.md' -Destination 'artifacts\AppShelf\MCP — подключение.md' -Force
         Copy-Item -LiteralPath 'THIRD-PARTY-NOTICES.txt' -Destination 'artifacts\AppShelf\THIRD-PARTY-NOTICES.txt' -Force
         New-Item -ItemType Directory -Path 'artifacts\AppShelf\licenses' -Force | Out-Null
         Copy-Item -LiteralPath ".packages\microsoft.netcore.app.runtime.win-x64\$RuntimeVersion\LICENSE.TXT" -Destination 'artifacts\AppShelf\licenses\NET-LICENSE.txt' -Force

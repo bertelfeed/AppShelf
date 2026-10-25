@@ -192,7 +192,7 @@ public sealed class SettingsDialog : ShelfDialog
     public SettingsDialog() : base("Параметры AppShelf", 520)
     {
         var config = App.Current.Session.Configuration;
-        Heading("Параметры приложения", "AppShelf · 0.3.0");
+        Heading("Параметры приложения", "AppShelf · 0.4.0");
         Body.Children.Add(new TextBlock { Text = "Тема редактора", Margin = new Thickness(0, 8, 0, 8) });
         var appearance = new ComboBox { ItemsSource = new[] { "Как в Windows", "Светлая", "Тёмная" }, SelectedIndex = (int)config.Appearance };
         Body.Children.Add(appearance);

@@ -74,9 +74,9 @@ public partial class FolderView : UserControl
         if (dragging || ((Button)sender).DataContext is not TileModel model) return;
         if (model.Item.IsFolder) Navigate(model.Item.Id); else Launch(model.Item);
     }
-    private void Launch(ShelfItem item, bool elevated = false)
+    private async void Launch(ShelfItem item, bool elevated = false)
     {
-        try { ShellIntegration.Launch(item, elevated); ApplicationLaunched?.Invoke(); }
+        try { await App.Current.LaunchAsync(item, elevated); ApplicationLaunched?.Invoke(); }
         catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { }
         catch (Exception ex) { App.Current.Report(ex); }
     }

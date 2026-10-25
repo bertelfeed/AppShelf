@@ -147,6 +147,56 @@ internal static class Program
             Expect(!ReferenceEquals(second, first), "Refresh reused the old icon");
             Expect(second.Wait(8000) && second.Result is { IsFrozen: true }, "Refreshed icon was not read again");
         });
+        Check("A small icon inside the Shell's large frame is cut out to fill the tile", () =>
+        {
+            static byte[] Canvas(uint fill) { var pixels = new byte[256 * 256 * 4]; for (var i = 0; i < pixels.Length; i += 4) BitConverter.GetBytes(fill).CopyTo(pixels, i); return pixels; }
+            static void Paint(byte[] pixels, int x0, int y0, int size, uint color)
+            { for (var y = y0; y < y0 + size; y++) for (var x = x0; x < x0 + size; x++) BitConverter.GetBytes(color).CopyTo(pixels, (y * 256 + x) * 4); }
+            // Plain frame with a grey border and a 48 px icon in the middle, as Explorer draws Steam shortcuts.
+            var framed = Canvas(0xFFFBFBFB);
+            for (var i = 0; i < 256; i++) foreach (var (x, y) in new[] { (0, i), (1, i), (254, i), (255, i), (i, 0), (i, 1), (i, 254), (i, 255) })
+                BitConverter.GetBytes(0xFFC8C8C8u).CopyTo(framed, (y * 256 + x) * 4);
+            Paint(framed, 104, 104, 48, 0xFFB03020);
+            Expect(IconService.SmallIconBounds(framed, 256, 256) is { Width: 48, Height: 48, X: 104, Y: 104 }, "Framed small icon was not found");
+            var padded = Canvas(0); Paint(padded, 112, 112, 32, 0xFF2080F0);
+            Expect(IconService.SmallIconBounds(padded, 256, 256) is { Width: 32, X: 112 }, "Transparent padding was not cropped");
+            var fullBleed = Canvas(0xFF0D0D0D); Paint(fullBleed, 40, 40, 176, 0xFFFFFFFF);
+            Expect(IconService.SmallIconBounds(fullBleed, 256, 256) is null, "A large icon on a solid background was cropped");
+            var smallLogo = Canvas(0xFF0D0D0D); Paint(smallLogo, 112, 112, 32, 0xFFFFFFFF);
+            Expect(IconService.SmallIconBounds(smallLogo, 256, 256) is null, "A full-bleed icon with a small logo was cropped");
+            var large = Canvas(0); Paint(large, 16, 16, 224, 0xFF10A040);
+            Expect(IconService.SmallIconBounds(large, 256, 256) is null, "A normal large icon was cropped");
+        });
+        Check("A shortcut copy follows its original when the app rewrites it", () =>
+        {
+            var original = Path.Combine(root, "original.url"); var copy = Path.Combine(root, "copy.url");
+            File.WriteAllText(original, "[InternetShortcut]\r\nURL=https://old.example/\r\n"); File.Copy(original, copy);
+            var item = ShelfItem.Application("Game", copy); item.Origin = original;
+            Expect(!ShellIntegration.RefreshShortcutCopy(item), "An unchanged original was copied again");
+            File.WriteAllText(original, "[InternetShortcut]\r\nURL=https://new.example/\r\n");
+            File.SetLastWriteTimeUtc(original, DateTime.UtcNow.AddMinutes(1));
+            Expect(ShellIntegration.RefreshShortcutCopy(item) && File.ReadAllText(copy).Contains("new.example"), "The copy was not refreshed");
+            File.Delete(original);
+            Expect(!ShellIntegration.RefreshShortcutCopy(item) && File.Exists(copy), "A deleted original must keep the copy");
+        });
+        Check("A program that moved to a new version folder is found, another app's file is not", () =>
+        {
+            Expect(ShortcutRepair.AreVersions("version-e380c8edc8f6477c", "version-145f189a6a974303") && ShortcutRepair.AreVersions("app-1.0.9001", "app-1.0.9100") &&
+                ShortcutRepair.AreVersions("IntelliJ IDEA 2023.1", "IntelliJ IDEA 2024.2") && ShortcutRepair.AreVersions("1.2.3", "1.3.0"), "Version folders not recognized");
+            Expect(!ShortcutRepair.AreVersions("GameA", "GameB") && !ShortcutRepair.AreVersions("Squad", "Squad2") &&
+                !ShortcutRepair.AreVersions("Deep Rock Galactic", "Dead Cells") && !ShortcutRepair.AreVersions("same-1", "same-1"), "Different apps taken for versions");
+            var versions = Path.Combine(root, "Roblox", "Versions");
+            foreach (var (folder, age) in new[] { ("version-1a2b3c", -2), ("version-9f8e7d", -1), ("Other", 0) })
+            {
+                Directory.CreateDirectory(Path.Combine(versions, folder));
+                var exe = Path.Combine(versions, folder, "RobloxPlayerBeta.exe"); File.WriteAllText(exe, "");
+                File.SetLastWriteTimeUtc(exe, DateTime.UtcNow.AddDays(age));
+            }
+            var missing = Path.Combine(versions, "version-e380c8", "RobloxPlayerBeta.exe");
+            Expect(ShortcutRepair.FindMoved(missing) == Path.Combine(versions, "version-9f8e7d", "RobloxPlayerBeta.exe"), "Newest version was not picked: " + ShortcutRepair.FindMoved(missing));
+            Expect(ShortcutRepair.FindMoved(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "NoSuchApp", "x.exe")) is null,
+                "Search must not scan a broad root like Program Files");
+        });
         Check("Resolve Win32 known-folder paths and preserve UWP identifiers", () =>
         {
             var path = ShellIntegration.ResolveAppTarget(@"{6D809377-6AF0-444B-8957-A3773F02200E}\7-Zip\7zFM.exe");
@@ -492,6 +542,146 @@ internal static class Program
             var after = ShelfTree.Find(session.Configuration, folder.Id)!.Settings;
             expect(after.DesktopIconScale == before.DesktopIconScale && after.TaskbarIconScale == before.TaskbarIconScale, "Preview saved settings");
         });
+        check("Desktop organizing tools group, tidy, restore and undo without touching real files", () =>
+        {
+            var desktop = Path.Combine(root, "api-desktop");
+            Directory.CreateDirectory(Path.Combine(desktop, "Проекты"));
+            File.WriteAllText(Path.Combine(desktop, "Сайт.url"), "[InternetShortcut]\r\nURL=https://example.com/\r\n");
+            File.WriteAllText(Path.Combine(desktop, "notes.txt"), "keep me");
+            var api = new AppShelf.App.ShelfApi(session, null);
+            api.DesktopDirectories.Clear(); api.DesktopDirectories.Add(desktop);
+            AppShelfApiReply Call(string tool, string json = "{}")
+            {
+                var task = api.HandleAsync(tool, System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject());
+                PumpUntil(() => task.IsCompleted);
+                return new(task.Result.Ok, task.Result.Text);
+            }
+            var listing = Call("get_desktop");
+            expect(listing.Ok && listing.Text.Contains("\"Сайт\"") && listing.Text.Contains("web_link") && listing.Text.Contains("\"Проекты\""), "Desktop listing is incomplete: " + listing.Text);
+            var before = ShelfTree.Walk(session.Configuration.Items).Count();
+            var missing = Call("organize", "{\"groups\":[{\"folder\":\"Сайты\",\"items\":[\"Сайт\",\"Несуществующее приложение 7f3\"]}]}");
+            expect(!missing.Ok && missing.Text.Contains("Несуществующее приложение 7f3") && ShelfTree.Walk(session.Configuration.Items).Count() == before,
+                "A failed organize changed folders: " + missing.Text);
+            var organized = Call("organize", "{\"groups\":[{\"folder\":\"Сайты\",\"items\":[\"Сайт\",\"notes.txt\"]}],\"tidy_desktop\":true}");
+            expect(organized.Ok, organized.Text);
+            var sites = ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Сайты");
+            var link = sites.Children.Single(x => x.Name == "Сайт");
+            expect(sites.Children.Count == 2 && File.Exists(link.Target) && link.Target.StartsWith(session.Store.DirectoryPath, StringComparison.OrdinalIgnoreCase),
+                "Shortcut was not copied into the profile");
+            expect(!File.Exists(Path.Combine(desktop, "Сайт.url")) && File.Exists(Path.Combine(desktop, "notes.txt")), "Tidying moved the wrong items");
+            var moved = Call("organize", "{\"groups\":[{\"folder\":\"Документы/Текст\",\"items\":[\"notes.txt\"]}]}");
+            var text = ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Текст");
+            expect(moved.Ok && text.Children.Single().Name == "notes.txt" && sites.Children.Count == 2 &&
+                ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Сайты").Children.Count == 1, "Organize duplicated instead of moving: " + moved.Text);
+            var look = Call("set_folder_look", "{\"folder\":\"Сайты\",\"look\":\"symbol\",\"symbol\":\"Интернет\",\"color\":\"Зелёный\"}");
+            var settings = ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Сайты").Settings;
+            expect(look.Ok && settings.Face == FolderFace.Symbol && settings.FaceColor == "#10893E" && settings.FaceSymbol == "", "Folder look was not applied: " + look.Text);
+            var restored = Call("restore_desktop");
+            expect(restored.Ok && File.Exists(Path.Combine(desktop, "Сайт.url")), "Shortcut was not restored: " + restored.Text);
+            expect(Call("rename_item", "{\"item\":\"Сайты/Сайт\",\"new_name\":\"Пример\"}").Ok &&
+                ShelfTree.Walk(session.Configuration.Items).Any(x => x.Name == "Пример"), "Rename failed");
+            expect(Call("undo").Ok && ShelfTree.Walk(session.Configuration.Items).Any(x => x.Name == "Сайт"), "Undo did not revert the rename");
+            expect(Call("remove_item", "{\"item\":\"Документы\"}").Ok && !ShelfTree.Walk(session.Configuration.Items).Any(x => x.Name == "Текст"), "Remove failed");
+            expect(File.Exists(Path.Combine(desktop, "notes.txt")), "Removing from AppShelf deleted a real file");
+            expect(!Call("no_such_tool").Ok, "Unknown tool was accepted");
+            // Dictation: «Дискорд» is Discord; a near miss is not applied but suggested.
+            expect(AppShelf.App.ShelfApi.Skeleton("Дискорд") == AppShelf.App.ShelfApi.Skeleton("Discord") &&
+                AppShelf.App.ShelfApi.Skeleton("Обсидиан") == AppShelf.App.ShelfApi.Skeleton("Obsidian") &&
+                AppShelf.App.ShelfApi.Skeleton("Телеграм") == AppShelf.App.ShelfApi.Skeleton("Telegram"), "Sound-alike names do not match");
+            File.WriteAllText(Path.Combine(desktop, "Discord.url"), "[InternetShortcut]\r\nURL=https://discord.com/\r\n");
+            var nearMiss = Call("organize", "{\"groups\":[{\"folder\":\"Общение\",\"items\":[\"Дискорт\"]}],\"place_on_desktop\":false}");
+            expect(!nearMiss.Ok && nearMiss.Text.Contains("Discord") && !ShelfTree.Walk(session.Configuration.Items).Any(x => x.Name == "Общение"),
+                "A near miss was applied or not suggested: " + nearMiss.Text);
+            var dictated = Call("organize", "{\"groups\":[{\"folder\":\"Общение\",\"items\":[\"Дискорд\"]}],\"place_on_desktop\":false}");
+            expect(dictated.Ok && dictated.Text.Contains("Дискорд → Discord") &&
+                ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Общение").Children.Single().Name == "Discord", "Dictated name was not recognized: " + dictated.Text);
+            // The same app from the Start menu and as a desktop shortcut has different paths but one name.
+            session.Change(config => ShelfTree.Walk(config.Items).Single(x => x.IsFolder && x.Name == "Сайты").Children.Add(ShelfItem.Application("Близнец", @"shell:AppsFolder\Twin.App")));
+            File.WriteAllText(Path.Combine(desktop, "Близнец.url"), "[InternetShortcut]\r\nURL=https://example.org/\r\n");
+            var twin = Call("organize", "{\"groups\":[{\"folder\":\"Другое\",\"items\":[\"Близнец\"]}],\"place_on_desktop\":false}");
+            expect(twin.Ok && ShelfTree.Walk(session.Configuration.Items).Count(x => x.Name == "Близнец") == 1 &&
+                ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Другое").Children.Single().Name == "Близнец", "A same-named app was duplicated: " + twin.Text);
+            // A shortcut in a desktop subfolder is taken by its full path and stays where it is even with tidy_desktop.
+            var nested = Path.Combine(desktop, "Проекты", "Игра.url");
+            File.WriteAllText(nested, "[InternetShortcut]\r\nURL=steam://rungameid/1/\r\n");
+            var byPath = Call("organize", System.Text.Json.JsonSerializer.Serialize(new { groups = new[] { new { folder = "Game", items = new[] { nested } } }, tidy_desktop = true, place_on_desktop = false }));
+            expect(byPath.Ok && File.Exists(nested) &&
+                ShelfTree.Walk(session.Configuration.Items).Single(x => x.IsFolder && x.Name == "Game").Children.Single().Name == "Игра", "A full path outside the desktop was not taken: " + byPath.Text);
+            var folders = Call("get_folders");
+            expect(folders.Ok && folders.Text.Contains("\"Сайты\"") && folders.Text.Contains("\"symbol\""), "Folder tree is incomplete: " + folders.Text);
+        });
+        check("MCP server speaks JSON-RPC over stdio and forwards tool calls to the running app", () =>
+        {
+            var api = new AppShelf.App.ShelfApi(session, null);
+            using var stop = new System.Threading.CancellationTokenSource();
+            _ = ShelfApiChannel.ListenAsync(session.Store.DirectoryPath, (tool, args) =>
+                application.Dispatcher.InvokeAsync(() => api.HandleAsync(tool, args)).Task.Unwrap(), stop.Token);
+            var server = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\..\src\AppShelf.Mcp\bin\Release\net10.0\AppShelf.Mcp.exe"));
+            expect(File.Exists(server), "MCP server was not built: " + server);
+            var start = new ProcessStartInfo(server) { RedirectStandardInput = true, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true,
+                StandardOutputEncoding = new System.Text.UTF8Encoding(false), StandardInputEncoding = new System.Text.UTF8Encoding(false) };
+            start.ArgumentList.Add("--data-dir"); start.ArgumentList.Add(session.Store.DirectoryPath);
+            using var process = Process.Start(start)!;
+            try
+            {
+                System.Text.Json.Nodes.JsonObject Ask(string json)
+                {
+                    process.StandardInput.WriteLine(json); process.StandardInput.Flush();
+                    var line = process.StandardOutput.ReadLineAsync();
+                    PumpUntil(() => line.IsCompleted);
+                    return System.Text.Json.Nodes.JsonNode.Parse(line.Result!)!.AsObject();
+                }
+                var init = Ask("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},\"clientInfo\":{\"name\":\"checks\",\"version\":\"1\"}}}");
+                expect(init["result"]?["serverInfo"]?["name"]?.GetValue<string>() == "appshelf" && init["result"]?["capabilities"]?["tools"] is not null, "Bad initialize result");
+                process.StandardInput.WriteLine("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");
+                var tools = Ask("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}")["result"]!["tools"]!.AsArray();
+                expect(tools.Any(x => x!["name"]!.GetValue<string>() == "organize") && tools.All(x => x!["inputSchema"]?["type"]?.GetValue<string>() == "object"), "Tool list is wrong");
+                var call = Ask("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"get_folders\",\"arguments\":{}}}")["result"]!;
+                expect(call["isError"]?.GetValue<bool>() == false && call["content"]![0]!["text"]!.GetValue<string>().Contains("Сайты"), "Tool call was not forwarded");
+                var unknown = Ask("{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"resources/list\"}");
+                expect(unknown["error"]?["code"]?.GetValue<int>() == -32601, "Unknown method must be a JSON-RPC error");
+            }
+            finally { process.StandardInput.Close(); if (!process.WaitForExit(3000)) process.Kill(); stop.Cancel(); }
+        });
+        check("Broken shortcuts repair themselves; what cannot be found is faded and explained", () =>
+        {
+            var versions = Path.Combine(root, "repair", "Launcher", "Versions");
+            Directory.CreateDirectory(Path.Combine(versions, "version-77aa11"));
+            var current = Path.Combine(versions, "version-77aa11", "Player.exe"); File.WriteAllText(current, "");
+            var launchers = Path.Combine(session.Store.DirectoryPath, "launchers"); Directory.CreateDirectory(launchers);
+            var copy = Path.Combine(launchers, "Player-test.lnk");
+            ShellIntegration.CreateShortcut(copy, Path.Combine(versions, "version-0b0b0b", "Player.exe"), Path.Combine(versions, "version-0b0b0b"));
+            var userLink = Path.Combine(root, "repair", "User Player.lnk");
+            ShellIntegration.CreateShortcut(userLink, Path.Combine(versions, "version-0c0c0c", "Player.exe"));
+            var player = ShelfItem.Application("Player", copy);
+            var foreign = ShelfItem.Application("Player (user)", userLink);
+            var store = ShelfItem.Application("Близнец Апп", Path.Combine(root, "repair", "Gone", "twin.exe"));
+            var lost = ShelfItem.Application("Пропавшее", Path.Combine(root, "repair", "Gone", "lost.exe"));
+            var holder = ShelfItem.Folder("Ремонт"); holder.Children.AddRange([player, foreign, store, lost]);
+            session.Change(config => config.Items.Add(holder));
+            var repair = new AppShelf.App.ShelfRepair(session, () => Task.FromResult(new List<ShelfItem> { ShelfItem.Application("Близнец Апп", @"shell:AppsFolder\Twin.App") }), schedule: false);
+            typeof(AppShelf.App.App).GetProperty("Repair")!.SetValue(application, repair);
+            var staleIcon = session.Icons.GetAsync(copy);
+            var run = repair.CheckAllAsync(); PumpUntil(() => run.IsCompleted);
+            expect(run.Result == 3, "Expected three repairs, got " + run.Result);
+            expect(!ReferenceEquals(session.Icons.GetAsync(copy), staleIcon), "The icon of the broken shortcut stayed in memory");
+            expect(ShellIntegration.ReadShortcut(copy)!.Target == current && ShellIntegration.ReadShortcut(copy)!.WorkingDirectory == Path.GetDirectoryName(current),
+                "AppShelf's copy does not point at the new version");
+            var fixedForeign = ShelfTree.Find(session.Configuration, foreign.Id)!;
+            expect(ShellIntegration.ReadShortcut(userLink)!.Target.Contains("version-0c0c0c") && fixedForeign.Target.StartsWith(launchers) &&
+                ShellIntegration.ReadShortcut(fixedForeign.Target)!.Target == current && fixedForeign.Origin == userLink, "The user's own shortcut was changed or not copied");
+            expect(ShelfTree.Find(session.Configuration, store.Id)!.Target == @"shell:AppsFolder\Twin.App", "Start menu app was not used");
+            expect(repair.IsMissing(lost.Id) && !repair.IsMissing(player.Id), "Missing marks are wrong");
+            var tile = new AppShelf.App.TileModel(ShelfTree.Find(session.Configuration, lost.Id)!);
+            expect(tile.Missing && tile.IconOpacity < 1 && tile.Description.Contains("Не найдено"), "Missing app is not shown as missing");
+            expect(File.ReadAllText(Path.Combine(session.Store.DirectoryPath, "repairs.log")).Contains("Player:"), "Repair was not logged");
+            var launch = repair.PrepareAsync(ShelfTree.Find(session.Configuration, lost.Id)!); PumpUntil(() => launch.IsCompleted);
+            expect(launch.IsFaulted && launch.Exception!.InnerException!.Message.Contains("Пропавшее"), "Launching a missing app gives no clear message");
+            var again = repair.CheckAllAsync(); PumpUntil(() => again.IsCompleted);
+            expect(again.Result == 0, "Repaired apps were repaired again");
+            typeof(AppShelf.App.App).GetProperty("Repair")!.SetValue(application, null);
+            session.Change(config => config.Items.RemoveAll(x => x.Id == holder.Id));
+        });
         check("Disabling taskbar placement removes its window and preserves other settings", () =>
         {
             session.Change(config => ShelfTree.Find(config, folder.Id)!.Settings.ShowOnTaskbar = false);
@@ -531,6 +721,7 @@ internal static class Program
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool IsIconic(IntPtr hwnd);
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr hwnd, uint message, IntPtr w, IntPtr l);
+    private sealed record AppShelfApiReply(bool Ok, string Text);
     private sealed class WindowTestApplication : AppShelf.App.App
     {
         // Application queues startup from its constructor; never run production startup in a component test.

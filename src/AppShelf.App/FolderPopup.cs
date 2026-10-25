@@ -27,7 +27,7 @@ public static class FolderGrid
         var (tileWidth, tileHeight) = TileSize(settings, fromDesktop);
         // Nested folders are drawn at the exact device size so their four tiny previews stay sharp.
         var model = new TileModel(item, settings.ShowLabels, (int)Math.Ceiling(iconSize * pixelsPerDip), dark);
-        var image = new Image { Width = iconSize, Height = iconSize };
+        var image = new Image { Width = iconSize, Height = iconSize, Opacity = model.IconOpacity };
         image.SetBinding(Image.SourceProperty, new Binding(nameof(TileModel.Icon)));
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
         var content = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -39,7 +39,7 @@ public static class FolderGrid
             label.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush"); content.Children.Add(label);
         }
         var button = new Button { Width = tileWidth - 2, Height = tileHeight - 2, Margin = new Thickness(1), MinWidth = 0, MinHeight = 0,
-            Content = content, ToolTip = item.Name, DataContext = model, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0),
+            Content = content, ToolTip = model.Missing ? item.Name + " — не найдено" : item.Name, DataContext = model, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
         System.Windows.Automation.AutomationProperties.SetName(button, item.Name);
         return button;
@@ -193,13 +193,14 @@ public sealed class FolderPopup : Window
         foreach (var item in folder.Children)
         {
             var button = FolderGrid.Tile(item, settings, fromDesktop, pixelsPerDip, dark);
-            button.Click += (_, _) =>
+            button.Click += async (_, _) =>
             {
                 if (item.IsFolder) { currentId = item.Id; Render(); WindowPlacement.FitAtCurrentPosition(this); return; }
                 try
                 {
-                    ShellIntegration.Launch(item);
-                    if (settings.CloseAfterLaunch) Hide();
+                    var close = settings.CloseAfterLaunch;
+                    await App.Current.LaunchAsync(item);
+                    if (close) Hide();
                 }
                 catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { }
                 catch (Exception ex) { App.Current.Report(ex); }

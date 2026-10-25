@@ -16,6 +16,7 @@ public static class ShellIntegration
 
     public static void Launch(ShelfItem item, bool elevated = false)
     {
+        RefreshShortcutCopy(item);
         var target = Environment.ExpandEnvironmentVariables(item.Target);
         if (target.StartsWith("shell:AppsFolder\\", StringComparison.OrdinalIgnoreCase))
         {
@@ -30,6 +31,24 @@ public static class ShellIntegration
         };
         if (elevated || item.RunAsAdministrator) info.Verb = "runas";
         Process.Start(info);
+    }
+
+    /// <summary>
+    /// Items taken from the desktop start from AppShelf's own copy of the shortcut. Apps such as
+    /// launchers rewrite their shortcut on update, so a newer original replaces the copy.
+    /// Returns true when the copy was refreshed.
+    /// </summary>
+    public static bool RefreshShortcutCopy(ShelfItem item)
+    {
+        if (item.IsFolder || item.Origin.Length == 0 || string.Equals(item.Origin, item.Target, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.GetExtension(item.Origin), Path.GetExtension(item.Target), StringComparison.OrdinalIgnoreCase)) return false;
+        try
+        {
+            if (!File.Exists(item.Origin) || (File.Exists(item.Target) && File.GetLastWriteTimeUtc(item.Origin) <= File.GetLastWriteTimeUtc(item.Target))) return false;
+            File.Copy(item.Origin, item.Target, true);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
     public static string CreateFolderShortcut(ShelfItem folder, string directory, string dataPath, string? iconPath = null,
@@ -71,7 +90,34 @@ public static class ShellIntegration
         return shortcutPath;
     }
 
-    public sealed record ShortcutDetails(string Path, string Target, string Arguments, string IconPath, string AppId);
+    public sealed record ShortcutDetails(string Path, string Target, string Arguments, string IconPath, string AppId, string WorkingDirectory = "", int IconIndex = 0);
+
+    /// <summary>Points an existing shortcut at another program, keeping its arguments, AppID and other properties.</summary>
+    public static void RetargetShortcut(string path, string target, string workingDirectory, string iconPath, int iconIndex)
+    {
+        var link = (IShellLinkW)new ShellLink();
+        try
+        {
+            ((IPersistFile)link).Load(path, 2); // STGM_READWRITE
+            link.SetPath(target);
+            link.SetWorkingDirectory(workingDirectory);
+            link.SetIconLocation(iconPath, iconIndex);
+            ((IPersistFile)link).Save(path, true);
+        }
+        finally { Marshal.FinalReleaseComObject(link); }
+    }
+
+    public static void CreateShortcut(string path, string target, string workingDirectory = "")
+    {
+        var link = (IShellLinkW)new ShellLink();
+        try
+        {
+            link.SetPath(target);
+            link.SetWorkingDirectory(workingDirectory);
+            ((IPersistFile)link).Save(path, true);
+        }
+        finally { Marshal.FinalReleaseComObject(link); }
+    }
 
     public static ShortcutDetails? ReadShortcut(string path)
     {
@@ -80,15 +126,16 @@ public static class ShellIntegration
         try
         {
             ((IPersistFile)link).Load(path, 0);
-            var target = new StringBuilder(32768); var args = new StringBuilder(32768); var icon = new StringBuilder(32768);
+            var target = new StringBuilder(32768); var args = new StringBuilder(32768); var icon = new StringBuilder(32768); var directory = new StringBuilder(32768);
             link.GetPath(target, target.Capacity, IntPtr.Zero, 0);
-            link.GetArguments(args, args.Capacity); link.GetIconLocation(icon, icon.Capacity, out _);
+            link.GetArguments(args, args.Capacity); link.GetIconLocation(icon, icon.Capacity, out var iconIndex);
+            link.GetWorkingDirectory(directory, directory.Capacity);
             var key = AppIdKey;
             ((IPropertyStore)link).GetValue(ref key, out var value);
             string appId;
             try { appId = value.Type == 31 ? Marshal.PtrToStringUni(value.Pointer) ?? "" : ""; }
             finally { PropVariantClear(ref value); }
-            return new(path, target.ToString(), args.ToString(), icon.ToString(), appId);
+            return new(path, target.ToString(), args.ToString(), icon.ToString(), appId, directory.ToString(), iconIndex);
         }
         catch (Exception ex) when (ex is COMException or IOException or UnauthorizedAccessException) { return null; }
         finally { Marshal.FinalReleaseComObject(link); }

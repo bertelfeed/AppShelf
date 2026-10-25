@@ -63,7 +63,7 @@
        Click="TileClick" MouseRightButtonUp="TileContext" PreviewMouseLeftButtonDown="DragStart" PreviewMouseMove="DragMove"
        AllowDrop="True" Drop="TileDrop" DragOver="TileDragOver" Tag="{Binding}">
        <StackPanel VerticalAlignment="Center">
-        <Grid Height="58"><Image Source="{Binding Icon}" Width="{Binding IconSize}" Height="{Binding IconSize}" RenderOptions.BitmapScalingMode="HighQuality"/></Grid>
+        <Grid Height="58"><Image Source="{Binding Icon}" Width="{Binding IconSize}" Height="{Binding IconSize}" Opacity="{Binding IconOpacity}" RenderOptions.BitmapScalingMode="HighQuality"/></Grid>
         <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontSize="12" TextAlignment="Center" Margin="0,7,0,0"
          TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="32" LineHeight="16"
          Visibility="{Binding ShowLabel, Converter={StaticResource BoolVisibility}}"/>

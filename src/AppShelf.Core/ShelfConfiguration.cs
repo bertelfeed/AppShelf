@@ -28,6 +28,8 @@ public sealed class ShelfItem
     public string WorkingDirectory { get; set; } = "";
     public string IconPath { get; set; } = "";
     public bool RunAsAdministrator { get; set; }
+    /// <summary>Where the item was taken from, e.g. the desktop shortcut that AppShelf copied; empty if added by hand.</summary>
+    public string Origin { get; set; } = "";
     public List<ShelfItem> Children { get; set; } = [];
     public FolderSettings Settings { get; set; } = new();
     [JsonIgnore] public bool IsFolder => Kind == ItemKind.Folder;

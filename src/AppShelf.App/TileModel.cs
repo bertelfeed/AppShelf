@@ -9,7 +9,11 @@ public sealed class TileModel : INotifyPropertyChanged
 {
     public ShelfItem Item { get; }
     public string Name => Item.Name;
-    public string Description => Item.IsFolder ? Russian.Elements(Item.Children.Count) + " · папка" : Item.Target;
+    public string Description => Item.IsFolder ? Russian.Elements(Item.Children.Count) + " · папка"
+        : Missing ? "Не найдено — программу удалили или переместили. Свойства… — указать заново" : Item.Target;
+    /// <summary>The program could not be found even after an automatic search; the tile is drawn faded.</summary>
+    public bool Missing { get; }
+    public double IconOpacity => Missing ? .4 : 1;
     public double IconSize => Item.IsFolder ? 58 : 40;
     public bool ShowLabel { get; }
     private readonly int pixels;
@@ -22,6 +26,7 @@ public sealed class TileModel : INotifyPropertyChanged
     public TileModel(ShelfItem item, bool showLabels = true, int pixels = 128, bool? menuDark = null)
     {
         Item = item; ShowLabel = showLabels; this.pixels = Math.Clamp(pixels, 16, 512); this.menuDark = menuDark;
+        Missing = !item.IsFolder && App.Current.Repair?.IsMissing(item.Id) == true;
         Icon = item.IsFolder ? FolderImage([]) : Placeholder;
         _ = LoadAsync();
     }
