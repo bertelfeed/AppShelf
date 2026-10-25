@@ -9,73 +9,77 @@ public sealed class DesktopSingleClick : IDisposable
     private readonly string dataPath;
     private readonly Action<Guid> open;
     private readonly Dispatcher dispatcher;
-    private readonly MouseProcedure callback;
-    private readonly FileSystemWatcher watcher;
+    private readonly Action<InputHooks.MouseEvent> listener;
+    private readonly StaWorker accessibility = new("AppShelf desktop accessibility");
+    private readonly FileSystemWatcher? watcher;
     private readonly DispatcherTimer refreshTimer;
-    private Dictionary<string, Guid> shortcuts = new(StringComparer.CurrentCultureIgnoreCase);
-    private IntPtr hook;
+    private volatile Dictionary<string, Guid> shortcuts = new(StringComparer.CurrentCultureIgnoreCase);
     private Guid lastFolder;
     private DateTime lastClick;
-    private bool disposed;
-    public bool Installed => hook != IntPtr.Zero;
+    private volatile bool disposed;
+    public bool Installed => !disposed && InputHooks.Shared.Installed;
     public int ShortcutCount => shortcuts.Values.Distinct().Count();
+    /// <summary>Receives failures of background shortcut scans, which otherwise have no caller to report to.</summary>
+    public Action<Exception>? Error { get; set; }
 
     public DesktopSingleClick(string dataPath, Action<Guid> open)
     {
         this.dataPath = dataPath; this.open = open;
         dispatcher = Dispatcher.CurrentDispatcher;
-        callback = MouseMessage;
-        hook = SetWindowsHookEx(14, callback, GetModuleHandle(null), 0);
-        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        listener = MouseMessage;
+        InputHooks.Shared.Subscribe(listener);
         refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(220) };
         refreshTimer.Tick += async (_, _) => { refreshTimer.Stop(); await RefreshAsync(); };
-        watcher = new FileSystemWatcher(desktop, "*.lnk") { NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite };
-        watcher.Created += Changed; watcher.Changed += Changed; watcher.Deleted += Changed; watcher.Renamed += Changed;
-        watcher.EnableRaisingEvents = true;
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        if (Directory.Exists(desktop))
+        {
+            watcher = new FileSystemWatcher(desktop, "*.lnk") { NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite };
+            watcher.Created += Changed; watcher.Changed += Changed; watcher.Deleted += Changed; watcher.Renamed += Changed;
+            watcher.EnableRaisingEvents = true;
+        }
         _ = RefreshAsync();
     }
     private void Changed(object sender, FileSystemEventArgs e) => dispatcher.BeginInvoke(new Action(() =>
     { if (!disposed) { refreshTimer.Stop(); refreshTimer.Start(); } }));
     public async Task RefreshAsync()
     {
-        var map = await ShellIntegration.RunSta(() =>
-        {
-            var result = new Dictionary<string, Guid>(StringComparer.CurrentCultureIgnoreCase);
-            var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            foreach (var file in Directory.EnumerateFiles(desktop, "*.lnk"))
-            {
-                var link = ShellIntegration.ReadShortcut(file);
-                if (link is null || !link.AppId.StartsWith("AppShelf.Folder.", StringComparison.Ordinal) ||
-                    !Guid.TryParse(link.AppId["AppShelf.Folder.".Length..], out var id) ||
-                    !ShellIntegration.IsFolderShortcut(link, id, dataPath)) continue;
-                result[Path.GetFileNameWithoutExtension(file)] = id;
-                result[Path.GetFileName(file)] = id;
-            }
-            return result;
-        });
-        if (!disposed) shortcuts = map;
-    }
-    private IntPtr MouseMessage(int code, IntPtr message, IntPtr information)
-    {
         try
         {
-            if (code >= 0 && message.ToInt64() == 0x202 && shortcuts.Count > 0)
+            var map = await ShellIntegration.RunSta(() =>
             {
-                var point = Marshal.PtrToStructure<MouseInfo>(information).Point;
-                var window = WindowFromPoint(point);
-                var root = GetAncestor(window, 2);
-                if (ClassName(window) == "SysListView32" && ClassName(root) is "Progman" or "WorkerW")
-                    dispatcher.BeginInvoke(new Action(() => _ = HandleClickAsync(point, root)));
-            }
+                var result = new Dictionary<string, Guid>(StringComparer.CurrentCultureIgnoreCase);
+                var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                if (!Directory.Exists(desktop)) return result;
+                foreach (var file in Directory.EnumerateFiles(desktop, "*.lnk"))
+                {
+                    var link = ShellIntegration.ReadShortcut(file);
+                    if (link is null || !link.AppId.StartsWith("AppShelf.Folder.", StringComparison.Ordinal) ||
+                        !Guid.TryParse(link.AppId["AppShelf.Folder.".Length..], out var id) ||
+                        !ShellIntegration.IsFolderShortcut(link, id, dataPath)) continue;
+                    result[Path.GetFileNameWithoutExtension(file)] = id;
+                    result[Path.GetFileName(file)] = id;
+                }
+                return result;
+            });
+            if (!disposed) shortcuts = map;
         }
-        catch { }
-        return CallNextHookEx(hook, code, message, information);
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or COMException) { Error?.Invoke(ex); }
+    }
+    private void MouseMessage(InputHooks.MouseEvent input)
+    {
+        // Runs on the hook thread: only cheap window checks here, the rest goes to the dispatcher.
+        if (disposed || input.Message != 0x202 || shortcuts.Count == 0) return;
+        var point = new Point { X = input.X, Y = input.Y };
+        var window = WindowFromPoint(point);
+        var root = GetAncestor(window, 2);
+        if (ClassName(window) == "SysListView32" && ClassName(root) is "Progman" or "WorkerW")
+            dispatcher.BeginInvoke(new Action(() => _ = HandleClickAsync(point, root)));
     }
     private async Task HandleClickAsync(Point point, IntPtr desktop)
     {
         try
         {
-            var name = await ShellIntegration.RunSta(() => ItemName(point)).WaitAsync(TimeSpan.FromMilliseconds(750));
+            var name = await accessibility.Run(() => ItemName(point)).WaitAsync(TimeSpan.FromMilliseconds(750));
             if (disposed || name is null || !shortcuts.TryGetValue(name, out var id)) return;
             var now = DateTime.UtcNow;
             if (id == lastFolder && now - lastClick < TimeSpan.FromMilliseconds(GetDoubleClickTime() + 80)) return;
@@ -106,16 +110,11 @@ public sealed class DesktopSingleClick : IDisposable
     }
     public void Dispose()
     {
-        disposed = true; watcher.Dispose(); refreshTimer.Stop();
-        if (hook != IntPtr.Zero) { UnhookWindowsHookEx(hook); hook = IntPtr.Zero; }
+        if (disposed) return;
+        disposed = true; InputHooks.Shared.Unsubscribe(listener);
+        watcher?.Dispose(); refreshTimer.Stop(); accessibility.Dispose();
     }
     [StructLayout(LayoutKind.Sequential)] private struct Point { public int X, Y; }
-    [StructLayout(LayoutKind.Sequential)] private struct MouseInfo { public Point Point; public uint Data, Flags, Time; public UIntPtr Extra; }
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)] private delegate IntPtr MouseProcedure(int code, IntPtr message, IntPtr information);
-    [DllImport("user32.dll", SetLastError = true)] private static extern IntPtr SetWindowsHookEx(int type, MouseProcedure procedure, IntPtr module, uint thread);
-    [DllImport("user32.dll")] private static extern bool UnhookWindowsHookEx(IntPtr hook);
-    [DllImport("user32.dll")] private static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr w, IntPtr l);
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr GetModuleHandle(string? name);
     [DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(Point point);
     [DllImport("user32.dll")] private static extern IntPtr GetAncestor(IntPtr window, uint flags);
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();

@@ -11,9 +11,14 @@ namespace AppShelf.Windows;
 
 public sealed class IconService : IDisposable
 {
-    private readonly ConcurrentDictionary<string, Task<ImageSource?>> cache = new(StringComparer.OrdinalIgnoreCase);
+    private sealed record Entry(Task<ImageSource?> Icon, DateTime Created);
+    private readonly ConcurrentDictionary<string, Entry> cache = new(StringComparer.OrdinalIgnoreCase);
     private readonly BlockingCollection<Action> jobs = new(2048);
     private readonly string cachePath;
+    // Store apps and shortcuts change their icon without a file timestamp we can see,
+    // so cached icons are re-read once a day in memory and once a week from disk.
+    private static readonly TimeSpan MemoryLifetime = TimeSpan.FromDays(1);
+    private static readonly TimeSpan DiskLifetime = TimeSpan.FromDays(7);
     public IconService(string directory)
     {
         cachePath = Path.Combine(directory, "icons-v2");
@@ -22,9 +27,25 @@ public sealed class IconService : IDisposable
             { IsBackground = true, Name = "AppShelf shell icons" };
         worker.SetApartmentState(ApartmentState.STA);
         worker.Start();
+        // Only the PNG cache is pruned; folder ICOs referenced by shortcuts live elsewhere.
+        jobs.TryAdd(() => Prune(DateTime.UtcNow - 4 * DiskLifetime));
     }
 
-    public Task<ImageSource?> GetAsync(string target) => cache.GetOrAdd(target, path =>
+    public Task<ImageSource?> GetAsync(string target)
+    {
+        var now = DateTime.UtcNow;
+        return cache.AddOrUpdate(target, path => Load(path, now), (path, entry) =>
+            now - entry.Created < MemoryLifetime || !entry.Icon.IsCompleted ? entry : Load(path, now)).Icon;
+    }
+
+    /// <summary>Forgets every cached icon so the next request reads it again from Windows.</summary>
+    public void Clear()
+    {
+        cache.Clear();
+        jobs.TryAdd(() => Prune(DateTime.MaxValue));
+    }
+
+    private Entry Load(string path, DateTime now)
     {
         var result = new TaskCompletionSource<ImageSource?>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!jobs.TryAdd(() =>
@@ -32,14 +53,25 @@ public sealed class IconService : IDisposable
             try { result.TrySetResult(ReadIcon(path)); }
             catch { result.TrySetResult(null); }
         })) result.TrySetResult(null);
-        return result.Task;
-    });
+        return new(result.Task, now);
+    }
+
+    private void Prune(DateTime before)
+    {
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(cachePath, "*.png"))
+                try { if (File.GetLastWriteTimeUtc(file) < before) File.Delete(file); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        catch (IOException) { }
+    }
 
     private ImageSource? ReadIcon(string target)
     {
         var expanded = Environment.ExpandEnvironmentVariables(target);
         var stamp = File.Exists(expanded) ? File.GetLastWriteTimeUtc(expanded).Ticks.ToString() : "";
-        var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(target + "|" + stamp)));
+        var period = DateTime.UtcNow.Ticks / DiskLifetime.Ticks;
+        var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(target + "|" + stamp + "|" + period)));
         var disk = Path.Combine(cachePath, key + ".png");
         if (File.Exists(disk))
         {

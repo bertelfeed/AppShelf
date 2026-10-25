@@ -4,6 +4,8 @@ namespace AppShelf.Core;
 
 public enum ItemKind { Folder, Application }
 public enum Appearance { System, Light, Dark }
+/// <summary>What a folder icon shows: its first applications, a symbol, or the user's picture.</summary>
+public enum FolderFace { Preview, Symbol, Image }
 
 public sealed class ShelfConfiguration
 {
@@ -46,5 +48,11 @@ public sealed class FolderSettings
     public bool CloseAfterLaunch { get; set; } = true;
     public bool CloseOnFocusLost { get; set; } = true;
     public bool ShowOnTaskbar { get; set; }
+    public FolderFace Face { get; set; }
+    /// <summary>Plate colour as #RRGGBB; empty keeps the translucent Windows 11 plate.</summary>
+    public string FaceColor { get; set; } = "";
+    public string FaceSymbol { get; set; } = "";
+    /// <summary>Copy of the chosen picture inside the profile folder, so moving the original does not break the icon.</summary>
+    public string FaceImage { get; set; } = "";
     public double IconSizeFor(bool fromDesktop) => IconSize * (fromDesktop ? DesktopIconScale : TaskbarIconScale) / 100d;
 }

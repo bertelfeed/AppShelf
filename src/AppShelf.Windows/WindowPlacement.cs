@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace AppShelf.Windows;
 
@@ -29,13 +30,53 @@ public static class WindowPlacement
         try { SetForegroundWindow(hwnd); SetFocus(hwnd); }
         finally { if (attached) AttachThreadInput(currentThread, foregroundThread, false); }
     }
-    public static void StylePopup(Window window)
+    /// <summary>Rounded corners and acrylic. Returns false when the content has to stay opaque.</summary>
+    public static bool StylePopup(Window window, bool dark)
     {
         var handle = new WindowInteropHelper(window).Handle;
         var corner = 2;
         DwmSetWindowAttribute(handle, 33, ref corner, sizeof(int));
-        var backdrop = 3; // Desktop Acrylic, follows the system transparency preference.
-        DwmSetWindowAttribute(handle, 38, ref backdrop, sizeof(int));
+        return EnableBackdrop(window, 3, dark); // Acrylic, follows the system transparency preference.
+    }
+
+    /// <summary>
+    /// Shows a DWM system backdrop (2 Mica, 3 Acrylic) through the window. WPF paints an opaque
+    /// surface by default, so the composition background is cleared and the frame is extended.
+    /// </summary>
+    public static bool EnableBackdrop(Window window, int type, bool dark)
+    {
+        if (Environment.OSVersion.Version.Build < 22621 || SystemParameters.HighContrast) return false;
+        var handle = new WindowInteropHelper(window).Handle;
+        if (HwndSource.FromHwnd(handle) is not { CompositionTarget: { } target }) return false;
+        SetDarkFrame(window, dark);
+        if (DwmSetWindowAttribute(handle, 38, ref type, sizeof(int)) != 0) return false;
+        var margins = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
+        if (DwmExtendFrameIntoClientArea(handle, ref margins) != 0) return false;
+        target.BackgroundColor = Colors.Transparent;
+        return true;
+    }
+
+    /// <summary>Tints the backdrop for the window's own theme rather than the system one.</summary>
+    public static void SetDarkFrame(Window window, bool dark)
+    {
+        var value = dark ? 1 : 0;
+        DwmSetWindowAttribute(new WindowInteropHelper(window).Handle, 20, ref value, sizeof(int));
+    }
+
+    public static IntPtr ForegroundWindow() => GetForegroundWindow();
+    public static int DoubleClickTime => (int)GetDoubleClickTime();
+
+    /// <summary>The desktop icon view or its Progman/WorkerW host.</summary>
+    public static bool IsDesktop(IntPtr window)
+    {
+        if (window == IntPtr.Zero) return false;
+        return ClassName(window) is "SysListView32" or "SHELLDLL_DefView" or "Progman" or "WorkerW"
+            && ClassName(GetAncestor(window, 2)) is "Progman" or "WorkerW";
+    }
+    private static string ClassName(IntPtr window)
+    {
+        var buffer = new System.Text.StringBuilder(128);
+        GetClassName(window, buffer, buffer.Capacity); return buffer.ToString();
     }
 
     public static void NearPointer(Window window, bool fromDesktop = false)
@@ -84,4 +125,9 @@ public static class WindowPlacement
     [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
     [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr hwnd, uint attribute, ref int value, int size);
+    [StructLayout(LayoutKind.Sequential)] private struct Margins { public int Left, Right, Top, Bottom; }
+    [DllImport("dwmapi.dll")] private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
+    [DllImport("user32.dll")] private static extern IntPtr GetAncestor(IntPtr window, uint flags);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, System.Text.StringBuilder name, int length);
+    [DllImport("user32.dll")] private static extern uint GetDoubleClickTime();
 }

@@ -16,15 +16,24 @@ public sealed class FolderNode
 public partial class MainWindow : Window
 {
     private bool refreshingTree;
+    private bool mica;
     public MainWindow()
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => { mica = WindowPlacement.EnableBackdrop(this, 2, Theme.IsDark); RefreshBackdrop(); };
         App.Current.Session.Changed += RefreshTree;
         Browser.Navigated += id => HomeButton.SetResourceReference(BackgroundProperty, id is null ? "SelectedBrush" : "CanvasBrush");
         RefreshTree();
         HomeButton.SetResourceReference(BackgroundProperty, "SelectedBrush");
     }
     public void OpenFolder(Guid? id) => Browser.Navigate(id);
+    /// <summary>Keeps the Mica tint and the translucent editor colours in step with the editor theme.</summary>
+    public void RefreshBackdrop()
+    {
+        if (!mica) return;
+        WindowPlacement.SetDarkFrame(this, Theme.IsDark);
+        Theme.ApplyBackdropTo(this);
+    }
     private void RefreshTree()
     {
         refreshingTree = true;

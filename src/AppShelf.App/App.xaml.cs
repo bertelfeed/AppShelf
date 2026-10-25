@@ -43,7 +43,7 @@ public partial class App : Application
             Theme.Apply(Session.Configuration.Appearance);
             Publisher = new FolderPublisher(Session);
             TaskbarFolders = new TaskbarFolders(Session);
-            try { DesktopClicks = new DesktopSingleClick(Session.Store.DirectoryPath, id => ShowFolder(id, true)); }
+            try { DesktopClicks = new DesktopSingleClick(Session.Store.DirectoryPath, id => ShowFolder(id, true, toggle: true)) { Error = Log }; }
             catch (Exception ex) { Log(ex); }
             Session.Changed += OnChanged;
             SystemEvents.UserPreferenceChanged += PreferenceChanged;
@@ -80,15 +80,22 @@ public partial class App : Application
         editor.Activate();
     }
 
-    public void ShowFolder(Guid id, bool fromDesktop = false)
+    /// <param name="toggle">
+    /// A click on the folder's own button or icon closes an open menu. Taskbar buttons always toggle;
+    /// a launched desktop shortcut (double-click) only activates, so it never closes what it opened.
+    /// </param>
+    public void ShowFolder(Guid id, bool fromDesktop = false, bool toggle = false)
     {
         if (ShelfTree.Find(Session.Configuration, id) is not { IsFolder: true })
         { MessageBox.Show("Эта папка была удалена. Создайте новый ярлык для существующей папки.", "AppShelf"); return; }
+        toggle |= !fromDesktop;
         if (popup is { IsVisible: true } && popup.RootFolderId == id && popup.OpenedFromDesktop == fromDesktop)
         {
-            if (fromDesktop) popup.Activate(); else popup.Hide();
+            if (toggle) popup.Hide(); else popup.Activate();
             return;
         }
+        // The press on the button already closed the menu as an outside click; its release must not reopen it.
+        if (toggle && popup is not null && popup.JustClosedBySurface(id, fromDesktop)) return;
         popup ??= new FolderPopup();
         if (popup.IsVisible) popup.Hide();
         popup.Owner = editor is { IsVisible: true } ? editor : null;
@@ -112,9 +119,16 @@ public partial class App : Application
         return menu;
     }
 
-    private void OnChanged() { Theme.Apply(Session.Configuration.Appearance); popup?.RefreshTheme(); }
-    private void PreferenceChanged(object sender, UserPreferenceChangedEventArgs e) => Dispatcher.InvokeAsync(() =>
-    { Theme.Apply(Session.Configuration.Appearance); popup?.RefreshTheme(); });
+    private void OnChanged() => RefreshTheme();
+    private void PreferenceChanged(object sender, UserPreferenceChangedEventArgs e) => Dispatcher.InvokeAsync(RefreshTheme);
+    private void RefreshTheme() { Theme.Apply(Session.Configuration.Appearance); editor?.RefreshBackdrop(); popup?.RefreshTheme(); }
+
+    /// <summary>Re-extracts every application icon, e.g. after an app update changed its logo.</summary>
+    public void RefreshIcons()
+    {
+        Session.Icons.Clear();
+        Session.NotifyChanged();
+    }
 
     public void Report(Exception error)
     {

@@ -135,6 +135,18 @@ internal static class Program
             var icon = icons.GetAsync(Path.Combine(Environment.SystemDirectory, "notepad.exe"));
             Expect(icon.Wait(8000), "Icon timed out"); Expect(icon.Result is { IsFrozen: true });
         });
+        Check("Refreshing icons reads them again instead of reusing the cache", () =>
+        {
+            using var icons = new IconService(Path.Combine(root, "icon-refresh"));
+            var notepad = Path.Combine(Environment.SystemDirectory, "notepad.exe");
+            var first = icons.GetAsync(notepad);
+            Expect(first.Wait(8000) && first.Result is not null, "Icon timed out");
+            Expect(ReferenceEquals(icons.GetAsync(notepad), first), "A fresh icon was not reused from memory");
+            icons.Clear();
+            var second = icons.GetAsync(notepad);
+            Expect(!ReferenceEquals(second, first), "Refresh reused the old icon");
+            Expect(second.Wait(8000) && second.Result is { IsFrozen: true }, "Refreshed icon was not read again");
+        });
         Check("Resolve Win32 known-folder paths and preserve UWP identifiers", () =>
         {
             var path = ShellIntegration.ResolveAppTarget(@"{6D809377-6AF0-444B-8957-A3773F02200E}\7-Zip\7zFM.exe");
@@ -176,6 +188,39 @@ internal static class Program
                 { if (pixels[i + 2] > 180 && pixels[i] < 80) red++; if (pixels[i] > 180 && pixels[i + 2] < 80) blue++; }
                 Expect(red > 0 && blue > 0, "Missing content at size " + frame.PixelWidth);
             }
+        });
+        Check("Folder icon colour, symbol and picture replace the app preview", () =>
+        {
+            static Color Pixel(BitmapSource image, int x, int y)
+            {
+                var pixel = new byte[4]; image.CopyPixels(new Int32Rect(x, y, 1, 1), pixel, 4, 0);
+                return Color.FromArgb(pixel[3], pixel[2], pixel[1], pixel[0]);
+            }
+            var red = new DrawingImage(new GeometryDrawing(Brushes.Red, null, new RectangleGeometry(new Rect(0, 0, 64, 64))));
+            var green = Color.FromRgb(0x10, 0x89, 0x3E);
+            var plated = FolderArtwork.Render([red], 64, look: new FolderLook(green));
+            var edge = Pixel(plated, 32, 60);
+            Expect(edge.A > 240 && Math.Abs(edge.G - green.G) < 30 && edge.R < 80, "Plate colour was not used");
+            Expect(Pixel(plated, 32, 32).R > 200, "Apps were not drawn on the coloured plate");
+            var symbol = FolderArtwork.Render([red], 64, look: new FolderLook(null, FolderLook.Symbols[0].Glyph));
+            var white = 0; var pixels = new byte[64 * 64 * 4]; symbol.CopyPixels(pixels, 64 * 4, 0);
+            for (var i = 0; i < pixels.Length; i += 4) if (pixels[i] > 220 && pixels[i + 1] > 220 && pixels[i + 2] > 220) white++;
+            Expect(white > 40, "Symbol glyph is missing");
+            Expect(Pixel(symbol, 32, 60) is { B: > 150, R: < 60 }, "Symbol has no default plate");
+            var picture = FolderArtwork.Render([], 64, look: new FolderLook(null, null, red));
+            Expect(Pixel(picture, 32, 32) is { R: > 240, G: < 20 } && Pixel(picture, 6, 32).R > 240, "Picture does not fill the icon");
+            Expect(Pixel(picture, 0, 0).A < 40, "Picture ignores the rounded corners");
+        });
+        Check("Folder look settings default for older files and reject invalid colours", () =>
+        {
+            var legacy = System.Text.Json.JsonSerializer.Deserialize<FolderSettings>("{\"Columns\":4}")!;
+            Expect(legacy.Face == FolderFace.Preview && legacy.FaceColor == "" && legacy.FaceSymbol == "" && legacy.FaceImage == "");
+            var config = Example();
+            config.Items[0].Settings.FaceColor = "#0067C0"; config.Items[0].Settings.Face = FolderFace.Symbol; config.Items[0].Settings.FaceSymbol = "";
+            ShelfTree.Validate(config);
+            foreach (var invalid in new[] { "red", "#12345G", "#12345", "#0067C0FF" })
+            { config.Items[0].Settings.FaceColor = invalid; Reject(() => ShelfTree.Validate(config)); }
+            config.Items[0].Settings.FaceColor = ""; config.Items[0].Settings.Face = (FolderFace)42; Reject(() => ShelfTree.Validate(config));
         });
         Check("Desktop shortcut keeps native icon, surface and identity; refresh preserves path", () =>
         {
@@ -293,6 +338,35 @@ internal static class Program
             expect(IsWindowVisible(handle) && IsIconic(handle), "Taskbar window must be visible and minimized");
             expect(window.ShowInTaskbar && window.Title == folder.Name, "Incorrect taskbar identity");
         });
+        check("Taskbar hover preview shows the folder's apps and offers launch buttons", () =>
+        {
+            var window = application.Windows.OfType<AppShelf.App.FolderTaskbarWindow>().Single();
+            PumpUntil(() => window.TaskbarItemInfo?.ThumbButtonInfos.Count == 1);
+            expect(window.TaskbarItemInfo!.ThumbButtonInfos[0].Description == "Notepad" && window.TaskbarItemInfo.ThumbButtonInfos[0].ImageSource is not null,
+                "Launch button lacks the app name or icon");
+            var thumbnail = window.RenderThumbnail(200, 120);
+            var pixels = new byte[200 * 120 * 4]; thumbnail.CopyPixels(pixels, 200 * 4, 0);
+            var drawn = 0; for (var i = 3; i < pixels.Length; i += 4) if (pixels[i] > 0) drawn++;
+            expect(thumbnail.PixelWidth == 200 && thumbnail.PixelHeight == 120 && drawn > 400, "Thumbnail is empty or exceeds the requested size");
+            expect(pixels[3] == 0, "Thumbnail background should stay transparent");
+        });
+        check("A chosen folder picture is copied into the profile and used for the icon", () =>
+        {
+            var source = Path.Combine(root, "face-source.png");
+            var bitmap = BitmapSource.Create(4, 4, 96, 96, PixelFormats.Bgra32, null, Enumerable.Repeat(new byte[] { 0, 0, 255, 255 }, 16).SelectMany(x => x).ToArray(), 16);
+            using (var stream = File.Create(source)) { var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap)); encoder.Save(stream); }
+            var stored = AppShelf.App.FolderIconWriter.ImportPicture(folder.Id, source);
+            File.Delete(source);
+            expect(!Path.IsPathRooted(stored) && File.Exists(Path.Combine(session.Store.DirectoryPath, stored)), "Picture was not copied into the profile");
+            var settings = new FolderSettings { Face = FolderFace.Image, FaceImage = stored };
+            var look = AppShelf.App.FolderIconWriter.LookAsync(settings);
+            PumpUntil(() => look.IsCompleted);
+            expect(look.Result?.Image is not null, "Copied picture was not loaded");
+            var rejected = false;
+            try { AppShelf.App.FolderIconWriter.ImportPicture(folder.Id, Path.Combine(Environment.SystemDirectory, "notepad.exe")); }
+            catch (InvalidOperationException) { rejected = true; }
+            expect(rejected, "A non-image file was accepted as a folder picture");
+        });
         check("Taskbar restore opens a minimal folder menu with only title and icons", () =>
         {
             var window = application.Windows.OfType<AppShelf.App.FolderTaskbarWindow>().Single();
@@ -376,6 +450,47 @@ internal static class Program
             popup.Open(folder.Id);
             Descendants(popup).OfType<System.Windows.Controls.Button>().First().RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
             expect(!popup.IsVisible, "Title click did not close root folder");
+        });
+        check("A click on the folder's own button closes the menu instead of reopening it", () =>
+        {
+            application.ShowFolder(folder.Id);
+            var popup = application.Windows.OfType<AppShelf.App.FolderPopup>().Single();
+            PumpUntil(() => popup.IsVisible);
+            if (Environment.OSVersion.Version.Build >= 22621 && !SystemParameters.HighContrast)
+                expect(popup.Background is SolidColorBrush { Color.A: 0 }, "Menu paints over its acrylic backdrop");
+            var other = new Window { Title = "Toggle check", Width = 160, Height = 100, ShowInTaskbar = false };
+            try
+            {
+                // The press on the taskbar button dismisses the menu; its release then asks to open it again.
+                other.Show(); other.Activate();
+                PumpUntil(() => !popup.IsVisible);
+                application.ShowFolder(folder.Id);
+                expect(!popup.IsVisible, "The same click reopened the menu");
+                System.Threading.Thread.Sleep(700);
+                application.ShowFolder(folder.Id);
+                expect(popup.IsVisible, "A later click did not open the menu");
+            }
+            finally { other.Close(); popup.Hide(); }
+        });
+        check("Folder settings preview follows the slider of each surface without saving", () =>
+        {
+            var before = ShelfTree.Find(session.Configuration, folder.Id)!.Settings;
+            var dialog = new AppShelf.App.FolderSettingsDialog(folder.Id);
+            try
+            {
+                dialog.Show();
+                PumpUntil(() => dialog.IsLoaded);
+                var sliders = Descendants(dialog).OfType<System.Windows.Controls.Slider>().ToList();
+                System.Windows.Controls.Image Preview() { dialog.UpdateLayout(); return Descendants(dialog).OfType<System.Windows.Controls.Image>().First(); }
+                expect(Preview().Width == before.IconSizeFor(true), "Preview does not start on the desktop surface");
+                sliders[1].Value = 200;
+                expect(Preview().Width == before.IconSize * 2, "Preview ignored the taskbar slider");
+                sliders[0].Value = 50;
+                expect(Preview().Width == before.IconSize / 2, "Preview ignored the desktop slider");
+            }
+            finally { dialog.Close(); }
+            var after = ShelfTree.Find(session.Configuration, folder.Id)!.Settings;
+            expect(after.DesktopIconScale == before.DesktopIconScale && after.TaskbarIconScale == before.TaskbarIconScale, "Preview saved settings");
         });
         check("Disabling taskbar placement removes its window and preserves other settings", () =>
         {

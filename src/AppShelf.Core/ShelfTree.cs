@@ -72,11 +72,17 @@ public static class ShelfTree
                     throw new InvalidDataException("У приложения должен быть адрес запуска и не может быть вложенных элементов.");
                 if (item.Settings is null || item.Settings.Columns is < 3 or > 8 ||
                     item.Settings.IconSize is < 24 or > 80 || !Enum.IsDefined(item.Settings.Appearance) ||
-                    item.Settings.DesktopIconScale is < 50 or > 200 || item.Settings.TaskbarIconScale is < 50 or > 200)
+                    item.Settings.DesktopIconScale is < 50 or > 200 || item.Settings.TaskbarIconScale is < 50 or > 200 ||
+                    !Enum.IsDefined(item.Settings.Face) || item.Settings.FaceSymbol is not { Length: <= 8 } ||
+                    item.Settings.FaceImage is not { Length: <= 400 } || !IsColor(item.Settings.FaceColor))
                     throw new InvalidDataException("Некорректные параметры папки.");
                 Check(item.Children, depth + 1);
             }
         }
         Check(config.Items, 0);
     }
+
+    /// <summary>Empty (automatic) or #RRGGBB.</summary>
+    public static bool IsColor(string? value) =>
+        value is { Length: 0 } || (value is { Length: 7 } && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit));
 }

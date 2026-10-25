@@ -187,35 +187,12 @@ public sealed class MoveDialog : ShelfDialog
     }
 }
 
-public sealed class PinDialog : ShelfDialog
-{
-    public PinDialog(string folderName, string shortcutPath) : base("Закрепить папку", 500)
-    {
-        Heading("«" + folderName + "» на панели задач", "Ярлык папки готов. Закрепление выполняется через меню Windows.");
-        foreach (var text in new[] { "1. Нажмите «Показать ярлык».", "2. Нажмите правой кнопкой по выделенному ярлыку.", "3. Выберите «Закрепить на панели задач». При необходимости откройте «Показать дополнительные параметры»." })
-            Body.Children.Add(new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 6), LineHeight = 21 });
-        var desktop = new Button { Content = "Создать ярлык на рабочем столе", HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 18, 0, 0) };
-        desktop.Click += (_, _) =>
-        {
-            try
-            {
-                var file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), Path.GetFileName(shortcutPath));
-                File.Copy(shortcutPath, file, true); desktop.Content = "Ярлык создан"; desktop.IsEnabled = false;
-            }
-            catch (Exception ex) { App.Current.Report(ex); }
-        };
-        Body.Children.Add(desktop);
-        Accept.Content = "Показать ярлык";
-        Accept.Click += (_, _) => { ShellIntegration.RevealFile(shortcutPath); DialogResult = true; };
-    }
-}
-
 public sealed class SettingsDialog : ShelfDialog
 {
     public SettingsDialog() : base("Параметры AppShelf", 520)
     {
         var config = App.Current.Session.Configuration;
-        Heading("Параметры приложения", "AppShelf · 0.2.0");
+        Heading("Параметры приложения", "AppShelf · 0.3.0");
         Body.Children.Add(new TextBlock { Text = "Тема редактора", Margin = new Thickness(0, 8, 0, 8) });
         var appearance = new ComboBox { ItemsSource = new[] { "Как в Windows", "Светлая", "Тёмная" }, SelectedIndex = (int)config.Appearance };
         Body.Children.Add(appearance);
@@ -225,6 +202,12 @@ public sealed class SettingsDialog : ShelfDialog
         Body.Children.Add(startup);
         var hint = new TextBlock { Text = "Кнопки папок на панели задач и одиночный клик на рабочем столе работают, пока AppShelf запущен в фоне. Крестик скрывает редактор; выход доступен в меню значка у часов.", TextWrapping = TextWrapping.Wrap, LineHeight = 21, Margin = new Thickness(0, 22, 0, 0) };
         hint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush"); Body.Children.Add(hint);
+        Body.Children.Add(new TextBlock { Text = "Иконки приложений", Margin = new Thickness(0, 24, 0, 8) });
+        var icons = new Button { Content = "Обновить иконки", HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(14, 6, 14, 6) };
+        icons.Click += (_, _) => { App.Current.RefreshIcons(); icons.Content = "Обновление запущено"; icons.IsEnabled = false; };
+        Body.Children.Add(icons);
+        var iconsHint = new TextBlock { Text = "Если приложение обновилось, а в папках осталась старая иконка. Иконки также обновляются сами раз в неделю.", TextWrapping = TextWrapping.Wrap, LineHeight = 20, Margin = new Thickness(0, 8, 0, 0), FontSize = 12 };
+        iconsHint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush"); Body.Children.Add(iconsHint);
         Accept.Click += (_, _) =>
         {
             try
@@ -246,7 +229,91 @@ public sealed class FolderSettingsDialog : ShelfDialog
         var folder = ShelfTree.Find(App.Current.Session.Configuration, folderId) ?? throw new InvalidOperationException("Папка удалена.");
         var settings = folder.Settings;
         Heading(folder.Name, "Настройки применяются только к этой папке.");
-        Body.Children.Add(new TextBlock { Text = "Тема меню", Margin = new Thickness(0, 8, 0, 8) });
+        // Live preview of the menu, drawn by the same grid code as the real folder menu.
+        var surfaces = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+        var previewDesktop = new RadioButton { Content = "Рабочий стол", GroupName = "PreviewSurface" + folderId, IsChecked = true, Margin = new Thickness(0, 0, 18, 0) };
+        var previewTaskbar = new RadioButton { Content = "Панель задач", GroupName = "PreviewSurface" + folderId };
+        surfaces.Children.Add(previewDesktop); surfaces.Children.Add(previewTaskbar);
+        Body.Children.Add(surfaces);
+        var previewTitle = new TextBlock { Text = folder.Name, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Left,
+            TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(5, 1, 5, 2) };
+        previewTitle.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        var previewTiles = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Left };
+        var previewContent = new StackPanel(); previewContent.Children.Add(previewTitle); previewContent.Children.Add(previewTiles);
+        var preview = new Border { Child = previewContent, CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1), Padding = new Thickness(5, 3, 5, 5),
+            HorizontalAlignment = HorizontalAlignment.Center, IsHitTestVisible = false, Focusable = false };
+        System.Windows.Automation.AutomationProperties.SetName(preview, "Предпросмотр меню папки");
+        Body.Children.Add(preview);
+        var empty = new TextBlock { Text = "Папка пуста — добавьте приложения, чтобы увидеть меню.", HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0), FontSize = 12 };
+        empty.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+
+        // Folder icon look: desktop shortcut, taskbar button and the tile of this folder inside other folders.
+        Action updateFace = () => { }; // assigned once every control below exists
+        var face = settings.Face; var faceColor = settings.FaceColor; var faceSymbol = settings.FaceSymbol; var facePicture = settings.FaceImage;
+        Body.Children.Add(new TextBlock { Text = "Значок папки", Margin = new Thickness(0, 22, 0, 8) });
+        var faceRow = new Grid();
+        faceRow.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
+        faceRow.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
+        var faceImage = new Image { Width = 64, Height = 64 };
+        RenderOptions.SetBitmapScalingMode(faceImage, BitmapScalingMode.HighQuality);
+        var faceBox = new Border { Width = 92, Height = 92, CornerRadius = new CornerRadius(8), Child = faceImage, VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 0, 16, 0), Background = new LinearGradientBrush(Color.FromRgb(0x2E, 0x3E, 0x58), Color.FromRgb(0x8A, 0x9B, 0xB3), 45) };
+        System.Windows.Automation.AutomationProperties.SetName(faceBox, "Предпросмотр значка папки");
+        faceRow.Children.Add(faceBox);
+        var faceControls = new StackPanel(); Grid.SetColumn(faceControls, 1); faceRow.Children.Add(faceControls);
+        Body.Children.Add(faceRow);
+        var kinds = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+        var kindButtons = new Dictionary<FolderFace, RadioButton>();
+        foreach (var (text, value) in new[] { ("Приложения", FolderFace.Preview), ("Символ", FolderFace.Symbol), ("Картинка", FolderFace.Image) })
+        {
+            var radio = new RadioButton { Content = text, GroupName = "Face" + folderId, IsChecked = face == value, Margin = new Thickness(0, 0, 14, 0), MinWidth = 0 };
+            radio.Checked += (_, _) => { face = value; if (face == FolderFace.Symbol && faceSymbol.Length == 0) faceSymbol = FolderLook.Symbols[0].Glyph; updateFace(); };
+            kindButtons[value] = radio; kinds.Children.Add(radio);
+        }
+        faceControls.Children.Add(kinds);
+        Button Choice(object content, string tip, Action select)
+        {
+            var button = new Button { Content = content, ToolTip = tip, Width = 30, Height = 30, MinWidth = 0, MinHeight = 0, Padding = new Thickness(0), Margin = new Thickness(0, 0, 4, 4) };
+            System.Windows.Automation.AutomationProperties.SetName(button, tip);
+            button.Click += (_, _) => { select(); updateFace(); };
+            return button;
+        }
+        var swatches = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
+        var swatchButtons = new List<(Button Button, string Hex)>();
+        var automatic = new System.Windows.Shapes.Ellipse { Width = 18, Height = 18, StrokeThickness = 1.5, Fill = new SolidColorBrush(Color.FromArgb(0x55, 236, 239, 244)) };
+        automatic.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "MutedBrush");
+        swatchButtons.Add((Choice(automatic, "Автоматически", () => faceColor = ""), ""));
+        foreach (var (name, hex) in FolderLook.Palette)
+            swatchButtons.Add((Choice(new System.Windows.Shapes.Ellipse { Width = 18, Height = 18, Fill = new SolidColorBrush(FolderLook.ParseColor(hex)!.Value) }, name, () => faceColor = hex), hex));
+        foreach (var (button, _) in swatchButtons) swatches.Children.Add(button);
+        faceControls.Children.Add(swatches);
+        var symbols = new WrapPanel();
+        var symbolButtons = new List<(Button Button, string Glyph)>();
+        foreach (var (glyph, name) in FolderLook.Symbols)
+        {
+            var text = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 15, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            var button = Choice(text, name, () => faceSymbol = glyph);
+            symbolButtons.Add((button, glyph)); symbols.Children.Add(button);
+        }
+        faceControls.Children.Add(symbols);
+        var picturePanel = new StackPanel();
+        var pick = new Button { Content = "Выбрать картинку…", HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(14, 6, 14, 6) };
+        var pictureName = new TextBlock { TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 6, 0, 0), FontSize = 12 };
+        pictureName.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        pick.Click += (_, _) =>
+        {
+            var picker = new OpenFileDialog { Title = "Картинка для значка папки", Filter = "Картинки|*.png;*.jpg;*.jpeg;*.bmp;*.ico" };
+            if (picker.ShowDialog(this) != true) return;
+            facePicture = picker.FileName; face = FolderFace.Image; kindButtons[FolderFace.Image].IsChecked = true; updateFace();
+        };
+        picturePanel.Children.Add(pick); picturePanel.Children.Add(pictureName);
+        faceControls.Children.Add(picturePanel);
+        var faceHint = new TextBlock { Text = "Виден на ярлыке рабочего стола, кнопке панели задач и внутри других папок. Для цветного смайлика выберите его картинкой.",
+            TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0), FontSize = 12 };
+        faceHint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        Body.Children.Add(faceHint);
+
+        Body.Children.Add(new TextBlock { Text = "Тема меню", Margin = new Thickness(0, 18, 0, 8) });
         var appearance = new ComboBox { ItemsSource = new[] { "Как в Windows", "Светлая", "Тёмная" }, SelectedIndex = (int)settings.Appearance };
         Body.Children.Add(appearance);
         Body.Children.Add(new TextBlock { Text = "Столбцов", Margin = new Thickness(0, 18, 0, 8) });
@@ -270,21 +337,76 @@ public sealed class FolderSettingsDialog : ShelfDialog
         var labels = new CheckBox { Content = "Подписи под иконками", IsChecked = settings.ShowLabels, Margin = new Thickness(0, 22, 0, 0) }; Body.Children.Add(labels);
         var close = new CheckBox { Content = "Закрывать после запуска приложения", IsChecked = settings.CloseAfterLaunch, Margin = new Thickness(0, 16, 0, 0) }; Body.Children.Add(close);
         var outside = new CheckBox { Content = "Закрывать по клику снаружи и при переключении окна", IsChecked = settings.CloseOnFocusLost, Margin = new Thickness(0, 16, 0, 0) }; Body.Children.Add(outside);
+        FolderSettings Draft(FolderSettings current) => new()
+        {
+            Appearance = (Appearance)appearance.SelectedIndex,
+            Columns = (int)columns.SelectedItem, IconSize = current.IconSize,
+            DesktopIconScale = (int)Math.Round(desktopScale.Value), TaskbarIconScale = (int)Math.Round(taskbarScale.Value),
+            ShowLabels = labels.IsChecked == true, CloseAfterLaunch = close.IsChecked == true,
+            CloseOnFocusLost = outside.IsChecked == true, ShowOnTaskbar = current.ShowOnTaskbar,
+            Face = face, FaceColor = faceColor, FaceSymbol = face == FolderFace.Symbol ? faceSymbol : current.FaceSymbol, FaceImage = facePicture
+        };
+        async void UpdateFace()
+        {
+            if (!IsLoaded) return;
+            symbols.Visibility = face == FolderFace.Symbol ? Visibility.Visible : Visibility.Collapsed;
+            picturePanel.Visibility = face == FolderFace.Image ? Visibility.Visible : Visibility.Collapsed;
+            pictureName.Text = FolderIconWriter.PicturePath(facePicture) is null ? "Картинка не выбрана" : Path.GetFileName(facePicture);
+            Brush selected = (Brush)FindResource(SystemColors.AccentColorBrushKey);
+            foreach (var (button, hex) in swatchButtons) { button.BorderBrush = hex == faceColor ? selected : Brushes.Transparent; button.BorderThickness = new Thickness(2); }
+            foreach (var (button, glyph) in symbolButtons) { button.BorderBrush = glyph == faceSymbol ? selected : Brushes.Transparent; button.BorderThickness = new Thickness(2); }
+            try
+            {
+                var previews = new List<ImageSource?>();
+                foreach (var child in FolderPreview.Applications(folder))
+                    previews.Add(await App.Current.Session.Icons.GetAsync(string.IsNullOrWhiteSpace(child.IconPath) ? child.Target : child.IconPath));
+                var look = await FolderIconWriter.LookAsync(Draft(settings));
+                faceImage.Source = FolderArtwork.Render(previews, (int)Math.Ceiling(64 * VisualTreeHelper.GetDpi(this).PixelsPerDip), look: look);
+            }
+            catch (Exception ex) { App.Current.Log(ex); }
+        }
+        updateFace = UpdateFace;
+        Loaded += (_, _) => UpdateFace();
+        void UpdatePreview()
+        {
+            if (!IsLoaded) return;
+            var draft = Draft(settings);
+            var desktop = previewDesktop.IsChecked == true;
+            var dark = Theme.IsDarkFor(draft.Appearance);
+            preview.Resources["TextBrush"] = new SolidColorBrush(dark ? Colors.White : Color.FromRgb(0x1A, 0x1A, 0x1A));
+            preview.Resources["MutedBrush"] = new SolidColorBrush(dark ? Color.FromRgb(0xB8, 0xB8, 0xB8) : Color.FromRgb(0x61, 0x61, 0x61));
+            preview.Background = new SolidColorBrush(dark ? Color.FromRgb(0x2C, 0x2C, 0x2C) : Color.FromRgb(0xF3, 0xF3, 0xF3));
+            preview.BorderBrush = new SolidColorBrush(dark ? Color.FromArgb(0x33, 255, 255, 255) : Color.FromArgb(0x1F, 0, 0, 0));
+            var items = folder.Children.Take(draft.Columns * 2).ToList();
+            var (tileWidth, _) = FolderGrid.TileSize(draft, desktop);
+            previewTiles.Width = FolderGrid.Columns(draft, items.Count) * tileWidth;
+            previewTiles.Children.Clear();
+            var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+            foreach (var item in items) previewTiles.Children.Add(FolderGrid.Tile(item, draft, desktop, pixelsPerDip, dark));
+            previewContent.Children.Remove(empty);
+            if (items.Count == 0) previewContent.Children.Add(empty);
+        }
+        appearance.SelectionChanged += (_, _) => UpdatePreview();
+        columns.SelectionChanged += (_, _) => UpdatePreview();
+        labels.Click += (_, _) => UpdatePreview();
+        previewDesktop.Checked += (_, _) => UpdatePreview();
+        previewTaskbar.Checked += (_, _) => UpdatePreview();
+        // Moving a slider shows the surface it belongs to.
+        desktopScale.ValueChanged += (_, _) => { if (previewDesktop.IsChecked != true) previewDesktop.IsChecked = true; else UpdatePreview(); };
+        taskbarScale.ValueChanged += (_, _) => { if (previewTaskbar.IsChecked != true) previewTaskbar.IsChecked = true; else UpdatePreview(); };
+        Loaded += (_, _) => UpdatePreview();
         Accept.Click += (_, _) =>
         {
             try
             {
+                // The picture is copied into the profile only on save; without a picture the app preview stays.
+                if (face == FolderFace.Image && Path.IsPathRooted(facePicture) && File.Exists(facePicture))
+                    facePicture = FolderIconWriter.ImportPicture(folderId, facePicture);
+                if (face == FolderFace.Image && FolderIconWriter.PicturePath(facePicture) is null) face = FolderFace.Preview;
                 App.Current.Session.Change(config =>
                 {
                     var current = ShelfTree.Find(config, folderId) ?? throw new InvalidOperationException("Папка удалена.");
-                    current.Settings = new FolderSettings
-                    {
-                        Appearance = (Appearance)appearance.SelectedIndex,
-                        Columns = (int)columns.SelectedItem, IconSize = current.Settings.IconSize,
-                        DesktopIconScale = (int)Math.Round(desktopScale.Value), TaskbarIconScale = (int)Math.Round(taskbarScale.Value),
-                        ShowLabels = labels.IsChecked == true, CloseAfterLaunch = close.IsChecked == true,
-                        CloseOnFocusLost = outside.IsChecked == true, ShowOnTaskbar = current.Settings.ShowOnTaskbar
-                    };
+                    current.Settings = Draft(current.Settings);
                 });
                 DialogResult = true;
             }

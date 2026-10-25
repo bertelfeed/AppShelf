@@ -1,4 +1,4 @@
-AppShelf 0.2.0 - reconstructed development checkpoint
+AppShelf 0.3.0 - reconstructed development checkpoint
 
 Build on Windows using .NET 10 SDK: ./build.ps1
 To publish the portable application: ./build.ps1 -Publish

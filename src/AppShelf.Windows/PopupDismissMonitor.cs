@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 
@@ -7,32 +6,28 @@ namespace AppShelf.Windows;
 /// <summary>Dismisses a popup even when Windows did not give it keyboard focus.</summary>
 public sealed class PopupDismissMonitor : IDisposable
 {
+    public enum Reason { OutsideClick, ForegroundChanged }
     private readonly IntPtr window;
     private readonly Dispatcher dispatcher;
-    private readonly Action dismiss;
-    private readonly MouseProcedure mouseCallback;
-    private readonly ForegroundProcedure foregroundCallback;
-    private IntPtr mouseHook, foregroundHook;
+    private readonly Action<Reason, IntPtr> dismiss;
+    private readonly Action<InputHooks.MouseEvent> mouseListener;
+    private readonly Action foregroundListener;
     private IntPtr lastForeground;
-    private bool disposed;
+    private volatile bool disposed;
 
-    public PopupDismissMonitor(IntPtr window, Action dismiss)
+    public PopupDismissMonitor(IntPtr window, Action dismiss) : this(window, (_, _) => dismiss()) { }
+
+    /// <param name="dismiss">Runs on the creating dispatcher with the reason and the window that took the click or focus.</param>
+    public PopupDismissMonitor(IntPtr window, Action<Reason, IntPtr> dismiss)
     {
         this.window = window;
         this.dismiss = dismiss;
         dispatcher = Dispatcher.CurrentDispatcher;
-        mouseCallback = MouseMessage;
-        foregroundCallback = ForegroundChanged;
-        mouseHook = SetWindowsHookEx(14, mouseCallback, GetModuleHandle(null), 0);
-        if (mouseHook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
-        foregroundHook = SetWinEventHook(3, 3, IntPtr.Zero, foregroundCallback, 0, 0, 0);
-        if (foregroundHook == IntPtr.Zero)
-        {
-            var error = Marshal.GetLastWin32Error();
-            Dispose();
-            throw new Win32Exception(error);
-        }
         lastForeground = GetForegroundWindow();
+        mouseListener = MouseMessage;
+        foregroundListener = ForegroundChanged;
+        InputHooks.Shared.Subscribe(mouseListener);
+        InputHooks.Shared.Subscribe(foregroundListener);
     }
 
     private bool BelongsToPopup(IntPtr target)
@@ -41,24 +36,17 @@ public sealed class PopupDismissMonitor : IDisposable
         return target == window || GetAncestor(target, 2) == window || GetAncestor(target, 3) == window;
     }
 
-    private void QueueDismiss() => dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+    private void MouseMessage(InputHooks.MouseEvent input)
     {
-        if (!disposed) dismiss();
-    }));
-
-    private IntPtr MouseMessage(int code, IntPtr message, IntPtr information)
-    {
-        // Never consume input: the clicked application or desktop still receives the click.
-        if (code >= 0 && message.ToInt64() is 0x201 or 0x204 or 0x207 or 0x20B)
-        {
-            var point = Marshal.PtrToStructure<MouseInfo>(information).Point;
-            if (!BelongsToPopup(WindowFromPoint(point))) QueueDismiss();
-        }
-        return CallNextHookEx(mouseHook, code, message, information);
+        if (disposed || input.Message == 0x202) return;
+        var target = WindowFromPoint(new Point { X = input.X, Y = input.Y });
+        if (BelongsToPopup(target)) return;
+        dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() => { if (!disposed) dismiss(Reason.OutsideClick, target); }));
     }
 
-    private void ForegroundChanged(IntPtr hook, uint eventType, IntPtr target, int objectId, int childId, uint thread, uint time)
+    private void ForegroundChanged()
     {
+        if (disposed) return;
         // Out-of-context events can arrive after a newer activation. Inspect the current
         // foreground and ignore events left over from opening the popup itself.
         dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
@@ -67,7 +55,7 @@ public sealed class PopupDismissMonitor : IDisposable
             var active = GetForegroundWindow();
             if (active == lastForeground) return;
             lastForeground = active;
-            if (!BelongsToPopup(active)) dismiss();
+            if (!BelongsToPopup(active)) dismiss(Reason.ForegroundChanged, active);
         }));
     }
 
@@ -75,21 +63,12 @@ public sealed class PopupDismissMonitor : IDisposable
     {
         if (disposed) return;
         disposed = true;
-        if (mouseHook != IntPtr.Zero) { UnhookWindowsHookEx(mouseHook); mouseHook = IntPtr.Zero; }
-        if (foregroundHook != IntPtr.Zero) { UnhookWinEvent(foregroundHook); foregroundHook = IntPtr.Zero; }
+        InputHooks.Shared.Unsubscribe(mouseListener);
+        InputHooks.Shared.Unsubscribe(foregroundListener);
     }
 
     [StructLayout(LayoutKind.Sequential)] private struct Point { public int X, Y; }
-    [StructLayout(LayoutKind.Sequential)] private struct MouseInfo { public Point Point; public uint Data, Flags, Time; public UIntPtr Extra; }
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)] private delegate IntPtr MouseProcedure(int code, IntPtr message, IntPtr information);
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)] private delegate void ForegroundProcedure(IntPtr hook, uint eventType, IntPtr window, int objectId, int childId, uint thread, uint time);
-    [DllImport("user32.dll", SetLastError = true)] private static extern IntPtr SetWindowsHookEx(int type, MouseProcedure callback, IntPtr module, uint thread);
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr GetModuleHandle(string? name);
-    [DllImport("user32.dll")] private static extern bool UnhookWindowsHookEx(IntPtr hook);
-    [DllImport("user32.dll")] private static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr message, IntPtr information);
     [DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(Point point);
     [DllImport("user32.dll")] private static extern IntPtr GetAncestor(IntPtr window, uint flags);
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
-    [DllImport("user32.dll", SetLastError = true)] private static extern IntPtr SetWinEventHook(uint first, uint last, IntPtr module, ForegroundProcedure callback, uint process, uint thread, uint flags);
-    [DllImport("user32.dll")] private static extern bool UnhookWinEvent(IntPtr hook);
 }

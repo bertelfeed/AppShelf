@@ -27,6 +27,9 @@ public sealed class ShelfSession
         Changed?.Invoke();
     }
 
+    /// <summary>Redraws every view without changing the configuration, e.g. after icons were refreshed.</summary>
+    public void NotifyChanged() => Changed?.Invoke();
+
     public void Undo()
     {
         if (undo.Count == 0) return;
