@@ -12,7 +12,12 @@ artifacts/
 *.pfx
 *.p12
 *.key
-# Local development journals contain machine-specific paths and real profile details.
-HANDOFF_CLAUDE_CODE.md
-VALIDATION.md
 data/
+# Python helpers in tools/ and .github/scripts/
+__pycache__/
+*.pyc
+# Editors and Windows Explorer
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini

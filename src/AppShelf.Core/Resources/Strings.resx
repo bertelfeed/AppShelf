@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -790,4 +790,36 @@ The application was removed or moved. Right-click it in AppShelf and choose Prop
   <data xml:space="preserve" name="ResidentExecutableMissing">
     <value>AppShelf is not running, and AppShelf.exe was not found beside the MCP server.</value>
   </data>
+  <data xml:space="preserve" name="SupportProject">
+    <value>Support the project</value>
+  </data>
+  <data xml:space="preserve" name="SupportOnBoosty">
+    <value>Support on Boosty</value>
+  </data>
+  <data xml:space="preserve" name="SupportHelp">
+    <value>If AppShelf saves you time, you can support its development on Boosty.</value>
+  </data>
+  <data xml:space="preserve" name="StartupDisabledInSettings">
+    <value>Startup for AppShelf is turned off in Windows Settings. Turn it on in Settings → Apps → Startup.</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotImportProfile">
+    <value>Could not take over the existing AppShelf profile</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotWriteShortcut"><value>The new shortcut could not be written: {0}</value></data>
+  <data xml:space="preserve" name="ProfilePathsOverlap"><value>The source and destination profile folders must not overlap.</value></data>
+  <data xml:space="preserve" name="ProfileDestinationNotEmpty"><value>Choose an empty folder for the imported profile. Existing files will not be replaced.</value></data>
+  <data xml:space="preserve" name="ProfileLinksUnsupported"><value>The profile contains a symbolic link or junction. Copy it to a regular folder before importing.</value></data>
+  <data xml:space="preserve" name="StartupManagedByWindows"><value>Windows policy prevents this startup change. Check your device's startup settings.</value></data>
+  <data xml:space="preserve" name="InvalidDesktopArchive"><value>The desktop shortcut archive manifest is invalid. The profile was not imported.</value></data>
+  <data xml:space="preserve" name="GitHub"><value>GitHub</value></data>
+  <data xml:space="preserve" name="MicrosoftStore"><value>Microsoft Store</value></data>
+  <data xml:space="preserve" name="OpenInMicrosoftStore"><value>Open AppShelf in Microsoft Store</value></data>
+  <data xml:space="preserve" name="MicrosoftStoreNotPublished"><value>The Store link will be available after the app is published.</value></data>
+  <data xml:space="preserve" name="ReportBug"><value>Report a bug</value></data>
+  <data xml:space="preserve" name="RateInMicrosoftStore"><value>Rate in Microsoft Store</value></data>
+  <data xml:space="preserve" name="CheckForUpdates"><value>Check for updates</value></data>
+  <data xml:space="preserve" name="UpdateAvailable"><value>Update available</value></data>
+  <data xml:space="preserve" name="UpdateAvailableVersion"><value>Version {0} is available</value></data>
+  <data xml:space="preserve" name="UpdateHelpStore"><value>Opens AppShelf in Microsoft Store, which installs the update.</value></data>
+  <data xml:space="preserve" name="UpdateHelpPortable"><value>Opens the release page. Close AppShelf before replacing its files, and keep the data folder.</value></data>
 </root>

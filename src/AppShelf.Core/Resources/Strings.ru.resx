@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -790,4 +790,36 @@
   <data xml:space="preserve" name="ResidentExecutableMissing">
     <value>AppShelf не запущен, а AppShelf.exe не найден рядом с сервером MCP.</value>
   </data>
+  <data xml:space="preserve" name="SupportProject">
+    <value>Поддержать проект</value>
+  </data>
+  <data xml:space="preserve" name="SupportOnBoosty">
+    <value>Поддержать на Boosty</value>
+  </data>
+  <data xml:space="preserve" name="SupportHelp">
+    <value>Если AppShelf экономит вам время, можно поддержать разработку на Boosty.</value>
+  </data>
+  <data xml:space="preserve" name="StartupDisabledInSettings">
+    <value>Автозапуск AppShelf выключен в параметрах Windows. Включите его в «Параметры → Приложения → Автозагрузка».</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotImportProfile">
+    <value>Не удалось перенести прежний профиль AppShelf</value>
+  </data>
+  <data xml:space="preserve" name="CouldNotWriteShortcut"><value>Не удалось записать новый ярлык: {0}</value></data>
+  <data xml:space="preserve" name="ProfilePathsOverlap"><value>Исходная папка профиля и папка назначения не должны пересекаться.</value></data>
+  <data xml:space="preserve" name="ProfileDestinationNotEmpty"><value>Выберите пустую папку для переноса профиля. Существующие файлы не будут заменены.</value></data>
+  <data xml:space="preserve" name="ProfileLinksUnsupported"><value>Профиль содержит символическую ссылку или соединение папок. Перед переносом скопируйте его в обычную папку.</value></data>
+  <data xml:space="preserve" name="StartupManagedByWindows"><value>Политика Windows не позволяет изменить автозапуск. Проверьте параметры автозагрузки устройства.</value></data>
+  <data xml:space="preserve" name="InvalidDesktopArchive"><value>Описание архива ярлыков рабочего стола повреждено. Профиль не был перенесён.</value></data>
+  <data xml:space="preserve" name="GitHub"><value>GitHub</value></data>
+  <data xml:space="preserve" name="MicrosoftStore"><value>Microsoft Store</value></data>
+  <data xml:space="preserve" name="OpenInMicrosoftStore"><value>Открыть AppShelf в Microsoft Store</value></data>
+  <data xml:space="preserve" name="MicrosoftStoreNotPublished"><value>Ссылка на Store появится после публикации приложения.</value></data>
+  <data xml:space="preserve" name="ReportBug"><value>Сообщить об ошибке</value></data>
+  <data xml:space="preserve" name="RateInMicrosoftStore"><value>Оценить в Microsoft Store</value></data>
+  <data xml:space="preserve" name="CheckForUpdates"><value>Проверять обновления</value></data>
+  <data xml:space="preserve" name="UpdateAvailable"><value>Доступно обновление</value></data>
+  <data xml:space="preserve" name="UpdateAvailableVersion"><value>Доступна версия {0}</value></data>
+  <data xml:space="preserve" name="UpdateHelpStore"><value>Откроет AppShelf в Microsoft Store, там и установится обновление.</value></data>
+  <data xml:space="preserve" name="UpdateHelpPortable"><value>Откроет страницу релиза. Перед заменой файлов закройте AppShelf, папку data не трогайте.</value></data>
 </root>

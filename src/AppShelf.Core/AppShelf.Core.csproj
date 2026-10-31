@@ -3,4 +3,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="RepositoryUrl" Value="$(RepositoryUrl)" />
+    <AssemblyMetadata Include="StoreProductId" Value="$(StoreProductId)" />
+  </ItemGroup>
 </Project>

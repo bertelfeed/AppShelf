@@ -1,1 +1,5 @@
 blank_issues_enabled: true
+contact_links:
+  - name: Support AppShelf on Boosty
+    url: https://boosty.to/bertelfeed/donate
+    about: AppShelf is free. You can support development here. Поддержать разработку.

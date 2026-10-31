@@ -1,0 +1,15 @@
+{
+  "foldersMenu": "My folders",
+  "flash": ["Rows.", "Columns.", "Colors.", "Sizes."],
+  "tags": {
+    "grid": "{columns} × {rows}",
+    "size": "{scale}%",
+    "light": "Light or dark",
+    "color": "Any color",
+    "pages": "Pages, like in Start"
+  },
+  "fast": ["Taskbar.", "Desktop.", "Folders in folders.", "Yours."],
+  "tagline": "Your apps. In your own order.",
+  "name": "AppShelf",
+  "subtitle": "Folders for your apps on Windows 11"
+}

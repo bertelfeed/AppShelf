@@ -12,6 +12,8 @@ public sealed class ShelfConfiguration
     public int SchemaVersion { get; set; } = 2;
     public Appearance Appearance { get; set; }
     public string Language { get; set; } = Localization.DefaultLanguage;
+    /// <summary>Show a notice when a newer version is out: from Microsoft Store in the package, from GitHub otherwise.</summary>
+    public bool CheckForUpdates { get; set; } = true;
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? Columns { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? CloseAfterLaunch { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? ShowLabels { get; set; }

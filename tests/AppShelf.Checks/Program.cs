@@ -376,6 +376,119 @@ internal static class Program
             using var pin = new NativeTaskbarPin();
             Console.WriteLine("INFO Taskbar API supported=" + pin.Supported + ", pinningAllowed=" + pin.Allowed);
         });
+        Check("A copied profile points its shortcuts and pictures at the new folder and leaves the original intact", () =>
+        {
+            var from = Path.Combine(root, "profile-from"); var to = Path.Combine(root, "profile-to");
+            Directory.CreateDirectory(Path.Combine(from, "shortcuts")); Directory.CreateDirectory(Path.Combine(from, "icons-v3"));
+            File.WriteAllText(Path.Combine(from, "shortcuts", "Tor.lnk"), "copy");
+            File.WriteAllText(Path.Combine(from, "icons-v3", "cache.png"), "cache");
+            var config = new ShelfConfiguration();
+            var folder = ShelfItem.Folder("Work"); folder.Settings.FaceImage = Path.Combine(from, "folder-art", "a.png");
+            var app = ShelfItem.Application("Tor", Path.Combine(from, "shortcuts", "Tor.lnk")); app.Origin = @"C:\Users\Someone\Desktop\Tor.lnk";
+            app.WorkingDirectory = from;
+            var outside = ShelfItem.Application("Notepad", @"C:\Windows\notepad.exe");
+            folder.Children.AddRange([app, outside]); config.Items.Add(folder);
+            new ConfigurationStore(from).Save(config);
+            var before = File.ReadAllText(Path.Combine(from, "shelf.json"));
+            ProfileCopy.Copy(from, to);
+            var copied = new ConfigurationStore(to).Load().Items[0];
+            Expect(copied.Children[0].Target == Path.Combine(to, "shortcuts", "Tor.lnk") && File.ReadAllText(copied.Children[0].Target) == "copy", "Shortcut copy was not moved");
+            Expect(copied.Children[0].Origin == app.Origin && copied.Children[1].Target == outside.Target, "Paths outside the profile changed");
+            Expect(copied.Settings.FaceImage == Path.Combine(to, "folder-art", "a.png"), "Picture path was not moved");
+            Expect(copied.Children[0].WorkingDirectory == to, "A working directory equal to the profile root was not moved");
+            Expect(!Directory.Exists(Path.Combine(to, "icons-v3")), "Icon cache was copied");
+            Expect(File.ReadAllText(Path.Combine(from, "shelf.json")) == before, "Original profile changed");
+        });
+        Check("Profile import rejects overlapping and occupied destinations without changing existing files", () =>
+        {
+            var from = Path.Combine(root, "protected-source");
+            new ConfigurationStore(from).Save(Example());
+            var before = File.ReadAllText(Path.Combine(from, "shelf.json"));
+            foreach (var to in new[] { from, Path.Combine(from, "nested"), root })
+            {
+                var rejected = false;
+                try { ProfileCopy.Copy(from, to); } catch (IOException) { rejected = true; }
+                Expect(rejected, "Overlapping destination was accepted: " + to);
+            }
+            var occupied = Path.Combine(root, "occupied-destination"); Directory.CreateDirectory(occupied);
+            File.WriteAllText(Path.Combine(occupied, "keep.txt"), "do not replace");
+            var refused = false;
+            try { ProfileCopy.Copy(from, occupied); } catch (IOException) { refused = true; }
+            Expect(refused && File.ReadAllText(Path.Combine(occupied, "keep.txt")) == "do not replace" && Directory.GetFiles(occupied).Length == 1);
+            Expect(File.ReadAllText(Path.Combine(from, "shelf.json")) == before && !Directory.Exists(Path.Combine(from, "nested")));
+        });
+        Check("A failed profile import leaves no partial destination or staging copy", () =>
+        {
+            var from = Path.Combine(root, "failed-import-source"); var to = Path.Combine(root, "failed-import-target");
+            new ConfigurationStore(from).Save(Example());
+            Directory.CreateDirectory(Path.Combine(from, "desktop-archive")); Directory.CreateDirectory(to);
+            File.WriteAllText(Path.Combine(from, "asset.png"), "copied before the failure");
+            foreach (var invalid in new[] { "{invalid json", "null", "{}", "[null]" })
+            {
+                File.WriteAllText(Path.Combine(from, "desktop-archive", "manifest.json"), invalid);
+                var rejected = false;
+                try { ProfileCopy.Copy(from, to); } catch (Exception ex) when (ex is System.Text.Json.JsonException or InvalidDataException) { rejected = true; }
+                Expect(rejected && !Directory.EnumerateFileSystemEntries(to).Any(), "The failed copy left a partial profile");
+            }
+            Expect(!Directory.GetDirectories(root, ".failed-import-target.import-*").Any(), "An abandoned staging copy remained");
+            Expect(File.ReadAllText(Path.Combine(from, "asset.png")) == "copied before the failure", "The source changed");
+        });
+        Check("Store links target one validated product and remain unavailable before setup", () =>
+        {
+            foreach (var invalid in new[] { "", "AppShelf", "https://example.com", "9AAAAAAAAAAA&other=1" })
+                Expect(AppLinks.StorePageFor(invalid) is null, "An invalid Store target was accepted");
+            Expect(AppLinks.StorePageFor(null) is null);
+            Expect(AppLinks.StorePageFor("9aaaaaaaaaaa")!.AbsoluteUri == "ms-windows-store://pdp/?ProductId=9AAAAAAAAAAA");
+            Expect(AppLinks.StorePageFor("9AAAAAAAAAAA", web: true)!.AbsoluteUri == "https://apps.microsoft.com/detail/9AAAAAAAAAAA");
+            Expect(Uri.TryCreate(AppLinks.GitHub, UriKind.Absolute, out var gitHub) && gitHub.Scheme == "https" && gitHub.Host == "github.com", "Repository link is missing from build metadata");
+        });
+        Check("Feedback links: Store rating needs a valid product ID and bug reports open the issue template picker", () =>
+        {
+            foreach (var invalid in new[] { null, "", "AppShelf", "https://example.com", "9AAAAAAAAAAA&other=1", "8AAAAAAAAAAA", "9AAAAAAAAAA" })
+                Expect(AppLinks.StoreReviewFor(invalid) is null, "An invalid Store rating target was accepted");
+            Expect(AppLinks.StoreReviewFor(" 9aaaaaaaaaaa ")!.AbsoluteUri == "ms-windows-store://review/?ProductId=9AAAAAAAAAAA");
+            Expect(AppLinks.MicrosoftStoreReview?.AbsoluteUri == AppLinks.StoreReviewFor(AppLinks.StoreProductId)?.AbsoluteUri, "The rating link ignores the configured product");
+            foreach (var invalid in new[] { null, "", "   ", "github.com/bertelfeed/AppShelf", "http://github.com/bertelfeed/AppShelf" })
+                Expect(AppLinks.NewIssueFor(invalid) is null, "A bug report link was built without an https repository");
+            foreach (var repository in new[] { "https://github.com/bertelfeed/AppShelf", "https://github.com/bertelfeed/AppShelf/" })
+                Expect(AppLinks.NewIssueFor(repository)!.AbsoluteUri == "https://github.com/bertelfeed/AppShelf/issues/new/choose", "Wrong bug report link for " + repository);
+            Expect(AppLinks.NewIssue!.AbsoluteUri == AppLinks.GitHub.TrimEnd('/') + "/issues/new/choose", "The bug report link ignores the repository metadata");
+        });
+        Check("Update notice: only a newer published GitHub release counts", () =>
+        {
+            Expect(ReleaseFeed.ApiFor("https://github.com/bertelfeed/AppShelf/")!.AbsoluteUri == "https://api.github.com/repos/bertelfeed/AppShelf/releases/latest");
+            Expect(ReleaseFeed.PageFor("https://github.com/bertelfeed/AppShelf")!.AbsoluteUri == "https://github.com/bertelfeed/AppShelf/releases/latest");
+            foreach (var invalid in new[] { "", "github.com/bertelfeed/AppShelf", "http://github.com/bertelfeed/AppShelf", "https://example.com/a/b", "https://github.com/bertelfeed" })
+                Expect(ReleaseFeed.ApiFor(invalid) is null, "An update source was built from " + invalid);
+            Expect(ReleaseFeed.VersionIn("{\"tag_name\":\"v1.2.3\",\"draft\":false,\"prerelease\":false}") == new Version(1, 2, 3));
+            Expect(ReleaseFeed.VersionIn("{\"tag_name\":\"1.0.0\"}") == new Version(1, 0, 0));
+            foreach (var json in new[] { "{\"tag_name\":\"v1.2.3\",\"prerelease\":true}", "{\"tag_name\":\"v1.2.3\",\"draft\":true}",
+                "{\"tag_name\":\"latest\"}", "{\"tag_name\":\"v2\"}", "{}", "[]", "not json", "{\"message\":\"Not Found\"}" })
+                Expect(ReleaseFeed.VersionIn(json) is null, "Not a release version: " + json);
+            Expect(ReleaseFeed.IsNewer(new Version(1, 0, 0), new Version(0, 6, 0, 0)));
+            Expect(!ReleaseFeed.IsNewer(new Version(0, 6, 0), new Version(0, 6, 0, 0)), "The assembly's fourth version part made the same release look newer");
+            Expect(!ReleaseFeed.IsNewer(new Version(0, 5, 9), new Version(0, 6, 0, 0)));
+            Expect(new ShelfConfiguration().CheckForUpdates && System.Text.Json.JsonSerializer.Deserialize<ShelfConfiguration>("{\"Items\":[]}")!.CheckForUpdates,
+                "Update checks must be on for new and older profiles");
+        });
+        Check("The Store update query answers without crashing outside the Store package", () =>
+        {
+            // Only the Store package gets updates; here the call must go through the ABI and simply find none or fail cleanly.
+            try { Expect(!StoreUpdates.Available(), "An unpackaged process reported a Store update"); }
+            catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or UnauthorizedAccessException or TimeoutException) { }
+        });
+        Check("A pinned folder's relaunch command without --data-dir belongs only to the default profile", () =>
+        {
+            var id = Guid.NewGuid();
+            var pinned = new ShellIntegration.ShortcutDetails(Path.Combine(root, "pinned.lnk"), Environment.ProcessPath!, $"--folder {id:D}", "", ShellIntegration.FolderAppId(id));
+            Expect(ShellIntegration.IsFolderShortcut(pinned, id, AppLocations.DefaultDataPath()), "The default profile did not recognize its pinned folder");
+            Expect(!ShellIntegration.IsFolderShortcut(pinned, id, Path.Combine(root, "other-profile")), "Another profile claimed a pinned folder of the default profile");
+        });
+        Check("An unpackaged process keeps its own executable for shortcuts and its classic profile", () =>
+        {
+            Expect(!AppLocations.IsPackaged && ShellIntegration.Launcher == Environment.ProcessPath, "Launcher changed outside the package");
+            Expect(PackageStartup.LaunchedAtSignIn() == false, "Startup task activation reported outside the package");
+        });
         Check("Schema 1 migration moves layout into independent folder settings", () =>
         {
             var path = Path.Combine(root, "legacy.json");
@@ -859,6 +972,86 @@ internal static class Program
             typeof(AppShelf.App.App).GetProperty("Repair")!.SetValue(application, null);
             session.Change(config => config.Items.RemoveAll(x => x.Id == holder.Id));
         });
+        check("A folder shortcut zeroed by a sync conflict is replaced by a working one", () =>
+        {
+            var desktop = Path.Combine(root, "zeroed-desktop"); Directory.CreateDirectory(desktop);
+            var damaged = ShelfItem.Folder("Zeroed check");
+            damaged.Children.Add(ShelfItem.Application("Notepad", Path.Combine(Environment.SystemDirectory, "notepad.exe")));
+            session.Change(config => config.Items.Add(damaged));
+            var publisher = new AppShelf.App.FolderPublisher(session, false) { Desktop = desktop };
+            try
+            {
+                var created = publisher.AddDesktopAsync(damaged.Id); PumpUntil(() => created.IsCompleted);
+                var path = created.Result;
+                // Ownership must survive a process restart before synchronization damages the file.
+                publisher.Dispose(); publisher = new AppShelf.App.FolderPublisher(session, false) { Desktop = desktop };
+                File.WriteAllBytes(path, new byte[2847]);
+                expect(ShellIntegration.IsDamagedShortcut(path) && !ShellIntegration.IsDamagedShortcut(Path.Combine(desktop, "missing.lnk")), "Damage detection is wrong");
+                var run = publisher.RepairDamagedAsync(); PumpUntil(() => run.IsCompleted);
+                expect(run.Result.SequenceEqual(["Zeroed check"]), "The damaged shortcut was not repaired");
+                expect(!ShellIntegration.IsDamagedShortcut(path) && ShellIntegration.IsFolderShortcut(ShellIntegration.ReadShortcut(path), damaged.Id, session.Store.DirectoryPath),
+                    "The new shortcut does not open the folder");
+                expect(Directory.GetFiles(Path.Combine(session.Store.DirectoryPath, "damaged-shortcuts"), "*Zeroed check.lnk").Length == 1, "The damaged file was not kept aside");
+                var again = publisher.RepairDamagedAsync(); PumpUntil(() => again.IsCompleted);
+                expect(again.Result.Count == 0, "A healthy shortcut was replaced");
+            }
+            finally { publisher.Dispose(); session.Change(config => config.Items.RemoveAll(x => x.Id == damaged.Id)); }
+        });
+        check("Damage repair leaves an unregistered same-name desktop file untouched", () =>
+        {
+            var desktop = Path.Combine(root, "foreign-zeroed-desktop"); Directory.CreateDirectory(desktop);
+            var group = ShelfItem.Folder("Someone else's shortcut"); session.Change(config => config.Items.Add(group));
+            var path = Path.Combine(desktop, ShellIntegration.FolderShortcutName(group) + ".lnk");
+            var bytes = new byte[123]; File.WriteAllBytes(path, bytes);
+            using var publisher = new AppShelf.App.FolderPublisher(session, false) { Desktop = desktop };
+            try
+            {
+                var task = publisher.RepairDamagedAsync(); PumpUntil(() => task.IsCompleted);
+                expect(task.Result.Count == 0 && File.ReadAllBytes(path).SequenceEqual(bytes), "A foreign file was adopted by name");
+            }
+            finally { session.Change(config => config.Items.RemoveAll(x => x.Id == group.Id)); }
+        });
+        check("Removing desktop placement clears duplicate owned shortcuts and cannot resurrect a damaged icon", () =>
+        {
+            var desktop = Path.Combine(root, "remove-owned-desktop"); Directory.CreateDirectory(desktop);
+            var group = ShelfItem.Folder("Remove check"); session.Change(config => config.Items.Add(group));
+            using var publisher = new AppShelf.App.FolderPublisher(session, false) { Desktop = desktop };
+            try
+            {
+                var add = publisher.AddDesktopAsync(group.Id); PumpUntil(() => add.IsCompleted);
+                var path = add.Result;
+                ShellIntegration.CreateFolderShortcut(group, desktop, session.Store.DirectoryPath, existingPath: Path.Combine(desktop, "Duplicate.lnk"));
+                var remove = publisher.RemoveDesktopAsync(group.Id); PumpUntil(() => remove.IsCompleted);
+                expect(!Directory.GetFiles(desktop, "*.lnk").Any(), "Duplicate folder placement was left behind");
+                File.WriteAllBytes(path, new byte[91]);
+                var repair = publisher.RepairDamagedAsync(); PumpUntil(() => repair.IsCompleted);
+                expect(repair.Result.Count == 0 && new FileInfo(path).Length == 91, "Removed placement was resurrected");
+                expect(!Directory.GetFiles(desktop, ".AppShelf-*.tmp").Any(), "Shortcut drafts were left behind");
+            }
+            finally { session.Change(config => config.Items.RemoveAll(x => x.Id == group.Id)); }
+        });
+        check("Desktop shortcuts restore from the imported archive without touching the original profile", () =>
+        {
+            var from = Path.Combine(root, "archive-import-source"); var to = Path.Combine(root, "archive-import-target");
+            var desktop = Path.Combine(root, "archive-import-desktop"); Directory.CreateDirectory(desktop);
+            var archived = Path.Combine(from, "desktop-archive", "batch", "Example.url"); Directory.CreateDirectory(Path.GetDirectoryName(archived)!);
+            File.WriteAllText(archived, "[InternetShortcut]\r\nURL=https://example.com/\r\n");
+            var original = Path.Combine(desktop, "Example.url");
+            var manifest = Path.Combine(from, "desktop-archive", "manifest.json");
+            File.WriteAllText(manifest, System.Text.Json.JsonSerializer.Serialize(new[] { new { Name = "Example", Original = original, Archived = archived, At = DateTimeOffset.UtcNow } }));
+            new ConfigurationStore(from).Save(new ShelfConfiguration());
+            ProfileCopy.Copy(from, to);
+            var imported = new AppShelf.App.ShelfSession(to);
+            try
+            {
+                var task = new AppShelf.App.ShelfApi(imported, null).HandleAsync("restore_desktop", new System.Text.Json.Nodes.JsonObject());
+                PumpUntil(() => task.IsCompleted);
+                expect(task.Result.Ok && File.Exists(original), "The imported archive could not restore a shortcut");
+                expect(File.Exists(archived) && File.ReadAllText(manifest).Contains(from.Replace("\\", "\\\\")), "Restoring used or modified the old archive");
+                expect(!File.Exists(Path.Combine(to, "desktop-archive", "batch", "Example.url")), "The new archive was not used");
+            }
+            finally { imported.Icons.Dispose(); }
+        });
         check("Disabling taskbar placement removes its window and preserves other settings", () =>
         {
             session.Change(config => ShelfTree.Find(config, folder.Id)!.Settings.ShowOnTaskbar = false);
@@ -947,6 +1140,42 @@ internal static class Program
                 }
                 foreach (var name in FolderFaceCatalog.Palette.Select(x => x.Name).Concat(FolderFaceCatalog.Symbols.Select(x => x.Name)))
                     expect(!System.Text.RegularExpressions.Regex.IsMatch(Localization.CatalogLabel(name), "[А-Яа-яЁё]"), "Untranslated artwork label: " + name);
+            }
+            finally { session.Change(config => config.Language = "ru-RU"); application.ApplyLanguage(); }
+        });
+        check("Settings put GitHub and Store buttons before support in both languages", () =>
+        {
+            try
+            {
+                foreach (var language in new[] { "en-US", "ru-RU" })
+                {
+                    session.Change(config => config.Language = language); application.ApplyLanguage();
+                    var dialog = new AppShelf.App.SettingsDialog();
+                    try
+                    {
+                        dialog.Show(); dialog.UpdateLayout();
+                        var buttons = Descendants(dialog).OfType<System.Windows.Controls.Button>().ToList();
+                        string Label(System.Windows.Controls.Button button) => System.Windows.Automation.AutomationProperties.GetName(button);
+                        var gitHub = buttons.Single(button => Label(button) == Localization.Get("GitHub"));
+                        var store = buttons.Single(button => Label(button) == Localization.Get("MicrosoftStore"));
+                        var support = buttons.Single(button => Label(button) == Localization.Get("SupportOnBoosty"));
+                        expect(buttons.IndexOf(gitHub) < buttons.IndexOf(store) && buttons.IndexOf(store) < buttons.IndexOf(support), "External links are not above support");
+                        expect(gitHub.IsEnabled && store.IsEnabled == (AppLinks.MicrosoftStore is not null), "Store button does not follow product readiness");
+                        expect(store.ToolTip as string == Localization.Get(store.IsEnabled ? "OpenInMicrosoftStore" : "MicrosoftStoreNotPublished"), "Store availability hint is missing");
+                        expect(System.Windows.Controls.ToolTipService.GetShowOnDisabled(store), "The unavailable Store hint cannot be shown");
+                        var report = buttons.Single(button => Label(button) == Localization.Get("ReportBug"));
+                        var rate = buttons.SingleOrDefault(button => Label(button) == Localization.Get("RateInMicrosoftStore"));
+                        expect(report.Content as string == Localization.Get("ReportBug") && report.ToolTip as string == AppLinks.NewIssue!.AbsoluteUri, "Bug report button is wrong");
+                        expect((rate is null) == (AppLinks.MicrosoftStoreReview is null), "Rating button does not follow product readiness");
+                        expect(buttons.IndexOf(store) < buttons.IndexOf(report) && buttons.IndexOf(report) < buttons.IndexOf(support)
+                            && (rate is null || buttons.IndexOf(report) < buttons.IndexOf(rate) && buttons.IndexOf(rate) < buttons.IndexOf(support)), "Feedback buttons are out of place");
+                        var storeImage = (System.Windows.Controls.Image)store.Content;
+                        var badge = (BitmapImage)storeImage.Source;
+                        expect(badge.UriSource.AbsoluteUri.Contains($"microsoft-store-{(language == "ru-RU" ? "ru" : "en")}.png"), "Store badge does not follow the interface language");
+                        expect(badge.PixelWidth >= 644 && gitHub.ActualHeight == store.ActualHeight, "Branded artwork failed to load or badge heights differ");
+                    }
+                    finally { dialog.Close(); }
+                }
             }
             finally { session.Change(config => config.Language = "ru-RU"); application.ApplyLanguage(); }
         });

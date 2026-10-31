@@ -191,6 +191,7 @@ public sealed class SettingsDialog : ShelfDialog
 {
     public SettingsDialog() : base(L.Get("AppShelfSettings"), 520)
     {
+        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/AppShelf;component/BrandLinks.xaml") });
         var config = App.Current.Session.Configuration;
         Heading(L.Get("AppSettings"), "AppShelf · " + typeof(App).Assembly.GetName().Version?.ToString(3));
         Body.Children.Add(new TextBlock { Text = L.Get("EditorTheme"), Margin = new Thickness(0, 8, 0, 8) });
@@ -202,30 +203,94 @@ public sealed class SettingsDialog : ShelfDialog
             ToolTip = L.Get("ChooseTheInterfaceLanguage") };
         System.Windows.Automation.AutomationProperties.SetName(language, L.Get("Language"));
         Body.Children.Add(language);
-        var startup = new CheckBox { Content = L.Get("StartAppShelfWhenISignInToWindows"), IsChecked = ShellIntegration.RunAtStartup, Margin = new Thickness(0, 24, 0, 0) };
+        bool? initialStartup = AppLocations.IsPackaged ? null : ShellIntegration.RunAtStartup;
+        var startup = new CheckBox { Content = L.Get("StartAppShelfWhenISignInToWindows"), IsChecked = initialStartup == true,
+            IsEnabled = initialStartup is not null, Margin = new Thickness(0, 24, 0, 0) };
         Body.Children.Add(startup);
+        if (AppLocations.IsPackaged) Loaded += async (_, _) =>
+        {
+            try
+            {
+                var enabled = await ShellIntegration.ReadRunAtStartupAsync();
+                if (!IsVisible) return;
+                initialStartup = enabled; startup.IsChecked = enabled; startup.IsEnabled = true;
+            }
+            catch (Exception ex) { if (IsVisible) App.Current.Report(ex); }
+        };
         var hint = new TextBlock { Text = L.Get("BackgroundOperationHelp"), TextWrapping = TextWrapping.Wrap, LineHeight = 21, Margin = new Thickness(0, 22, 0, 0) };
         hint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush"); Body.Children.Add(hint);
+        var updates = new CheckBox { Content = L.Get("CheckForUpdates"), IsChecked = config.CheckForUpdates, Margin = new Thickness(0, 20, 0, 0) };
+        Body.Children.Add(updates);
         Body.Children.Add(new TextBlock { Text = L.Get("AppIcons"), Margin = new Thickness(0, 24, 0, 8) });
         var icons = new Button { Content = L.Get("RefreshIcons"), HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(14, 6, 14, 6) };
         icons.Click += (_, _) => { App.Current.RefreshIcons(); icons.Content = L.Get("RefreshStarted"); icons.IsEnabled = false; };
         Body.Children.Add(icons);
         var iconsHint = new TextBlock { Text = L.Get("RefreshIconsHelp"), TextWrapping = TextWrapping.Wrap, LineHeight = 20, Margin = new Thickness(0, 8, 0, 0), FontSize = 12 };
         iconsHint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush"); Body.Children.Add(iconsHint);
-        Accept.Click += (_, _) =>
+        var links = new WrapPanel { Margin = new Thickness(0, 24, 0, 0) };
+        static Image Badge(string asset, double width, double height) => new()
         {
+            Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/AppShelf;component/Assets/Brand/" + asset)),
+            Width = width, Height = height, Stretch = Stretch.Uniform, IsHitTestVisible = false
+        };
+        Button Link(string label, FrameworkElement badge, Action open)
+        {
+            var button = new Button { Content = badge, Style = (Style)FindResource("BrandLinkButton"), Margin = new Thickness(0, 0, 12, 8) };
+            System.Windows.Automation.AutomationProperties.SetName(button, label);
+            button.Click += (_, _) => open(); links.Children.Add(button); return button;
+        }
+        var gitHubBadge = new Border { Background = new SolidColorBrush(Color.FromRgb(32, 32, 32)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(92, 92, 92)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4.5),
+            Child = Badge("github-lockup-white.png", 118, 27) };
+        Link(L.Get("GitHub"), gitHubBadge, App.Current.OpenGitHubPage).ToolTip = AppLinks.GitHub;
+        var badgeLanguage = L.NormalizeLanguage(config.Language) == "ru-RU" ? "ru" : "en";
+        var store = Link(L.Get("MicrosoftStore"), Badge($"microsoft-store-{badgeLanguage}.png", 161, 44), App.Current.OpenStorePage);
+        store.IsEnabled = AppLinks.MicrosoftStore is not null;
+        store.ToolTip = L.Get(store.IsEnabled ? "OpenInMicrosoftStore" : "MicrosoftStoreNotPublished");
+        ToolTipService.SetShowOnDisabled(store, true);
+        Body.Children.Add(links);
+        // Feedback actions appear only when their target exists: no repository, no report; no Store ID, no rating.
+        var feedback = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
+        void Feedback(string label, Uri? target, Action open)
+        {
+            if (target is null) return;
+            var button = new Button { Content = label, Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 8), ToolTip = target.AbsoluteUri };
+            System.Windows.Automation.AutomationProperties.SetName(button, label);
+            button.Click += (_, _) => open(); feedback.Children.Add(button);
+        }
+        Feedback(L.Get("ReportBug"), AppLinks.NewIssue, App.Current.OpenNewIssuePage);
+        Feedback(L.Get("RateInMicrosoftStore"), AppLinks.MicrosoftStoreReview, App.Current.OpenStoreReview);
+        if (feedback.Children.Count > 0) Body.Children.Add(feedback);
+        // A quiet way to support the author: only here and in the tray menu, never a reminder.
+        var supportHint = new TextBlock { Text = L.Get("SupportHelp"), TextWrapping = TextWrapping.Wrap, LineHeight = 20, Margin = new Thickness(0, 26, 0, 8), FontSize = 12 };
+        supportHint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush"); Body.Children.Add(supportHint);
+        var supportContent = new StackPanel { Orientation = Orientation.Horizontal };
+        var heart = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 8, 0) };
+        heart.SetResourceReference(TextBlock.ForegroundProperty, SystemColors.AccentColorBrushKey);
+        supportContent.Children.Add(heart); supportContent.Children.Add(new TextBlock { Text = L.Get("SupportProject") });
+        var support = new Button { Content = supportContent, HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(14, 6, 14, 6), ToolTip = AppLinks.Support };
+        System.Windows.Automation.AutomationProperties.SetName(support, L.Get("SupportOnBoosty"));
+        support.Click += (_, _) => App.Current.OpenSupportPage();
+        Body.Children.Add(support);
+        Accept.Click += async (_, _) =>
+        {
+            if (!Accept.IsEnabled) return;
+            Accept.IsEnabled = false;
             try
             {
-                if ((startup.IsChecked == true) != ShellIntegration.RunAtStartup)
-                    ShellIntegration.SetRunAtStartup(startup.IsChecked == true, App.Current.Session.Store.DirectoryPath);
+                if (initialStartup is { } previous && (startup.IsChecked == true) != previous)
+                    await ShellIntegration.SetRunAtStartupAsync(startup.IsChecked == true, App.Current.Session.Store.DirectoryPath);
+                if (!IsVisible) return;
                 App.Current.Session.Change(next =>
                 {
                     next.Appearance = (Appearance)appearance.SelectedIndex;
                     next.Language = language.SelectedIndex == 1 ? "ru-RU" : "en-US";
+                    next.CheckForUpdates = updates.IsChecked == true;
                 });
                 DialogResult = true;
             }
             catch (Exception ex) { App.Current.Report(ex); }
+            finally { if (IsVisible) Accept.IsEnabled = true; }
         };
     }
 }
@@ -233,7 +298,7 @@ public sealed class SettingsDialog : ShelfDialog
 public sealed class FolderSettingsDialog : ShelfDialog
 {
     private const double FacePreviewSize = 96;
-    public FolderSettingsDialog(Guid folderId) : base(L.Get("FolderSettings"), 520)
+    public FolderSettingsDialog(Guid folderId) : base(L.Get("FolderSettings"), 560)
     {
         var folder = ShelfTree.Find(App.Current.Session.Configuration, folderId) ?? throw new InvalidOperationException(L.Get("TheFolderWasDeleted"));
         var settings = folder.Settings;
@@ -275,7 +340,8 @@ public sealed class FolderSettingsDialog : ShelfDialog
         faceRow.Children.Add(faceBox);
         var faceControls = new StackPanel(); Grid.SetColumn(faceControls, 1); faceRow.Children.Add(faceControls);
         Body.Children.Add(faceRow);
-        var kinds = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+        // Wraps rather than clips when a translation is longer (Russian "Картинка" did not fit at 520 px).
+        var kinds = new WrapPanel { Margin = new Thickness(0, 0, 0, 10) };
         var kindButtons = new Dictionary<FolderFace, RadioButton>();
         foreach (var (text, value) in new[] { (L.Get("Apps"), FolderFace.Preview), (L.Get("Symbol"), FolderFace.Symbol), (L.Get("Image"), FolderFace.Image) })
         {

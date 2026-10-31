@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an idea for AppShelf. Можно писать по-русски.
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard or missing today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like
+      description: Describe how it could work on the desktop or taskbar.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AppShelf and Windows version
+      placeholder: AppShelf 0.6.0, Windows 11 24H2

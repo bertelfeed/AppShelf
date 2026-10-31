@@ -1,0 +1,119 @@
+name: Microsoft Store update
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing version tag containing this integration, for example v1.0.1'
+        required: true
+        type: string
+      dry_run:
+        description: 'Build and validate only; do not authenticate or submit to Store'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: microsoft-store-production
+  cancel-in-progress: false
+
+jobs:
+  not-connected:
+    if: >-
+      vars.MSSTORE_PUBLISH_ENABLED != 'true' &&
+      ((github.event_name == 'release' && !github.event.release.prerelease) ||
+      (github.event_name == 'workflow_dispatch' && !inputs.dry_run))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report pending Store setup
+        run: |
+          echo 'Microsoft Store is not connected. No update was submitted.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Complete docs/STORE-PUBLISHING.md, then set repository variable MSSTORE_PUBLISH_ENABLED=true.' >> "$GITHUB_STEP_SUMMARY"
+
+  store:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.dry_run) ||
+      (vars.MSSTORE_PUBLISH_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' || !github.event.release.prerelease))
+    runs-on: windows-latest
+    timeout-minutes: 40
+    environment: microsoft-store
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      STORE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+      MSSTORE_PUBLISH_ENABLED: ${{ vars.MSSTORE_PUBLISH_ENABLED }}
+      MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
+      MSSTORE_IDENTITY_NAME: ${{ vars.MSSTORE_IDENTITY_NAME }}
+      MSSTORE_PUBLISHER: ${{ vars.MSSTORE_PUBLISHER }}
+      MSSTORE_PUBLISHER_DISPLAY_NAME: ${{ vars.MSSTORE_PUBLISHER_DISPLAY_NAME }}
+      APPSHELF_SKIP_FOREGROUND_CHECKS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate tag and public identity
+        shell: pwsh
+        run: ./tools/prepare-store-release.ps1 -Tag $env:RELEASE_TAG -DryRun
+      - name: Check Store integration offline
+        shell: pwsh
+        run: ./tools/check-store-integration.ps1
+      - name: Validate production configuration
+        if: env.STORE_DRY_RUN != 'true'
+        shell: pwsh
+        env:
+          AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+          SELLER_ID: ${{ secrets.SELLER_ID }}
+          AZURE_AD_APPLICATION_CLIENT_ID: ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}
+          AZURE_AD_APPLICATION_SECRET: ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
+        run: ./tools/prepare-store-release.ps1 -Tag $env:RELEASE_TAG
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and check the release MSIX
+        shell: pwsh
+        run: ./build.ps1 -Check -Msix
+      - name: Validate the package without connecting to Store
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content Directory.Build.props -Raw)).Project.PropertyGroup.Version
+          ./tools/submit-store-release.ps1 -Tag $env:RELEASE_TAG -PackagePath "artifacts/AppShelf-$version-x64.msix" -DryRun
+      - name: Save the checked MSIX
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: AppShelf-store-${{ github.run_id }}
+          path: |
+            artifacts/AppShelf-*-x64.msix
+            artifacts/AppShelf-*-x64.msix.sha256
+          if-no-files-found: error
+          retention-days: 30
+      - name: Set up Microsoft Store CLI
+        if: env.STORE_DRY_RUN != 'true'
+        uses: microsoft/microsoft-store-apppublisher@15abd1c50fcc164b19cb240fb04ef3c49bf715a2 # v1.1
+        with:
+          version: v0.4.3
+      - name: Submit the checked package
+        if: env.STORE_DRY_RUN != 'true'
+        shell: pwsh
+        env:
+          AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+          SELLER_ID: ${{ secrets.SELLER_ID }}
+          AZURE_AD_APPLICATION_CLIENT_ID: ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}
+          AZURE_AD_APPLICATION_SECRET: ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
+        run: |
+          $version = ([xml](Get-Content Directory.Build.props -Raw)).Project.PropertyGroup.Version
+          ./tools/submit-store-release.ps1 -Tag $env:RELEASE_TAG -PackagePath "artifacts/AppShelf-$version-x64.msix"
+      - name: Summarize
+        shell: pwsh
+        run: |
+          if ($env:STORE_DRY_RUN -eq 'true') {
+            'MSIX built and validated. Dry run: nothing was uploaded or submitted to Microsoft Store.' >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            'Update submitted to Microsoft Store. Publication follows Microsoft certification; check Partner Center for status.' >> $env:GITHUB_STEP_SUMMARY
+          }

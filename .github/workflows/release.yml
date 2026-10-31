@@ -23,6 +23,7 @@ jobs:
         shell: pwsh
         env:
           APPSHELF_SKIP_FOREGROUND_CHECKS: '1'
+          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
         run: ./build.ps1 -Check -Package
       - name: Create a draft for review
         shell: pwsh

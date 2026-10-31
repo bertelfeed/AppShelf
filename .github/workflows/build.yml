@@ -29,7 +29,11 @@ jobs:
         env:
           # Hosted runners have no user's foreground desktop. Keep the other native checks.
           APPSHELF_SKIP_FOREGROUND_CHECKS: '1'
+          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
         run: ./build.ps1 -Check -Package
+      - name: Check Store integration without connecting
+        shell: pwsh
+        run: ./tools/check-store-integration.ps1
       - name: Upload portable preview
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

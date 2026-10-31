@@ -24,7 +24,7 @@
   <Grid Margin="0,0,12,0">
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <StackPanel Orientation="Horizontal" Margin="14,16,0,25">
-    <Image Source="Assets/AppShelf.ico" Width="30" Height="30" RenderOptions.BitmapScalingMode="HighQuality"/>
+    <Image Source="Assets/AppShelf.png" Width="30" Height="30" RenderOptions.BitmapScalingMode="HighQuality"/>
     <TextBlock Text="AppShelf" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,0,0"/>
    </StackPanel>
    <Button x:Name="HomeButton" Grid.Row="1" Style="{StaticResource NavButton}" Click="HomeClick" AutomationProperties.Name="{DynamicResource Text.MyFolders}">
@@ -41,9 +41,13 @@
     </TreeView>
    </Grid>
    <StackPanel Grid.Row="3">
+    <Button x:Name="UpdateButton" Style="{StaticResource NavButton}" Click="UpdateClick" Visibility="Collapsed" Background="{DynamicResource SelectedBrush}" Margin="0,12,0,0">
+     <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE896;" Style="{StaticResource Glyph}" Margin="0,0,12,0" Foreground="{DynamicResource {x:Static SystemColors.AccentColorBrushKey}}"/><TextBlock x:Name="UpdateText" TextWrapping="Wrap" MaxWidth="150"/></StackPanel>
+    </Button>
     <Border Height="1" Margin="12,12" Background="{DynamicResource LineBrush}"/>
     <Button Style="{StaticResource NavButton}" Click="BackupClick"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="{DynamicResource Text.Backups}"/></StackPanel></Button>
     <Button Style="{StaticResource NavButton}" Click="SettingsClick"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource Glyph}" Margin="0,0,12,0"/><TextBlock Text="{DynamicResource Text.Settings2}"/></StackPanel></Button>
+    <Button Style="{StaticResource NavButton}" Click="SupportClick" AutomationProperties.Name="{DynamicResource Text.SupportOnBoosty}"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xEB51;" Style="{StaticResource Glyph}" Margin="0,0,12,0" Foreground="{DynamicResource {x:Static SystemColors.AccentColorBrushKey}}"/><TextBlock Text="{DynamicResource Text.SupportProject}"/></StackPanel></Button>
     <TextBlock Text="{DynamicResource Text.YourAppsInYourOwnOrder}" FontSize="10" Foreground="{DynamicResource MutedBrush}" Margin="14,14,0,7"/>
    </StackPanel>
   </Grid>

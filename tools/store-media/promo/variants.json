@@ -1,0 +1,18 @@
+{
+  "comment": "Folder menus filmed for the promo's fast montage, in order. Apps come from a folder of ../demo.json ('from'); 'folders' fills the menu with the demo's folders as coloured tiles. 'tag' is the overlay caption key in text/<language>.json; 'colors' recolours the folder tiles.",
+  "defaults": { "Columns": 4, "Rows": 3, "ShowLabels": true, "DesktopIconScale": 200, "Appearance": 2 },
+  "variants": [
+    { "from": "work", "tag": "grid", "settings": { "Columns": 4, "Rows": 3 } },
+    { "from": "work", "tag": "grid", "settings": { "Columns": 6, "Rows": 2 } },
+    { "from": "work", "tag": "grid", "settings": { "Columns": 3, "Rows": 4 } },
+    { "from": "work", "tag": "grid", "settings": { "Columns": 8, "Rows": 2, "DesktopIconScale": 140 } },
+    { "from": "work", "tag": "size", "settings": { "Columns": 4, "Rows": 3, "DesktopIconScale": 100 } },
+    { "from": "work", "tag": "size", "settings": { "Columns": 4, "Rows": 3, "DesktopIconScale": 150 } },
+    { "from": "create", "tag": "light", "settings": { "Columns": 5, "Rows": 2, "Appearance": 1 } },
+    { "folders": true, "tag": "color", "colors": ["#0067C0", "#F7630C", "#8764B8", "#0099BC", "#10893E", "#E3008C"], "settings": { "Columns": 3, "Rows": 2 } },
+    { "folders": true, "tag": "color", "colors": ["#E81123", "#FFB900", "#00B294", "#E3008C", "#0067C0", "#F7630C"], "settings": { "Columns": 3, "Rows": 2 } },
+    { "folders": true, "tag": "color", "colors": ["#10893E", "#8764B8", "#F7630C", "#FFB900", "#E81123", "#0099BC"], "settings": { "Columns": 3, "Rows": 2, "Appearance": 1 } },
+    { "from": "create", "tag": "grid", "settings": { "Columns": 4, "Rows": 3 } },
+    { "from": "games", "tag": "pages", "settings": { "Columns": 4, "Rows": 2 } }
+  ]
+}

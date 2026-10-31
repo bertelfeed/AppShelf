@@ -70,7 +70,7 @@ async Task<ShelfApiChannel.Reply> SendAsync(string tool, JsonObject? arguments)
     try { return await ShelfApiChannel.SendAsync(dataPath, tool, arguments, 1500); }
     catch (TimeoutException) { }
     // AppShelf is not running for this profile: start it in the background and wait for its pipe.
-    var executable = Path.Combine(AppContext.BaseDirectory, "AppShelf.exe");
+    var executable = AppLocations.Launcher(AppLocations.AppAlias, "AppShelf.exe");
     if (!File.Exists(executable)) throw new IOException(L.Get("ResidentExecutableMissing"));
     // Shell execution: the resident app must not inherit this server's stdio pipes, or the client would never see them close.
     Process.Start(new ProcessStartInfo(executable, $"--background --data-dir \"{dataPath.TrimEnd('\\')}\"") { UseShellExecute = true })?.Dispose();
@@ -104,7 +104,5 @@ static JsonObject Error(JsonNode? id, int code, string text) =>
     new() { ["jsonrpc"] = "2.0", ["id"] = id?.DeepClone(), ["error"] = new JsonObject { ["code"] = code, ["message"] = text } };
 static string? Argument(string[] args, string key) { var i = Array.IndexOf(args, key); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
 
-// Same rule as AppShelf.exe: a portable copy keeps data next to the program.
-static string DefaultDataPath() => File.Exists(Path.Combine(AppContext.BaseDirectory, "portable.flag"))
-    ? Path.Combine(AppContext.BaseDirectory, "data")
-    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppShelf");
+// Same rule as AppShelf.exe: a portable copy keeps data next to the program, the Store version in its package folder.
+static string DefaultDataPath() => AppLocations.DefaultDataPath();

@@ -1,0 +1,16 @@
+name: Question
+description: Ask how to do something in AppShelf. Можно писать по-русски.
+labels: [question]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What are you trying to do?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AppShelf and Windows version
+      placeholder: AppShelf 0.6.0, Windows 11 24H2

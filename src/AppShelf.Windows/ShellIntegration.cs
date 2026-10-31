@@ -12,7 +12,17 @@ public static class ShellIntegration
     public const string ApplicationId = "AppShelf.Desktop";
     public static string FolderAppId(Guid id) => "AppShelf.Folder." + id.ToString("N");
 
-    public static void Initialize(string? appId = null) => SetCurrentProcessExplicitAppUserModelID(appId ?? ApplicationId);
+    /// <summary>A packaged process keeps the package's own AppUserModelID, so its editor groups with its Start entry.</summary>
+    public static void Initialize(string? appId = null) { if (!AppLocations.IsPackaged) SetCurrentProcessExplicitAppUserModelID(appId ?? ApplicationId); }
+
+    /// <summary>Program that folder shortcuts and pinned folder buttons start.</summary>
+    public static string? Launcher => AppLocations.IsPackaged ? AppLocations.Launcher(AppLocations.AppAlias, "AppShelf.exe") : Environment.ProcessPath;
+
+    private static bool IsLauncher(string target) =>
+        string.Equals(target, Launcher, StringComparison.OrdinalIgnoreCase) || string.Equals(target, Environment.ProcessPath, StringComparison.OrdinalIgnoreCase) ||
+        // Written by an earlier package version, whose folder an update removed; the refresh rewrites it to the alias.
+        (AppLocations.IsPackaged && target.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase) &&
+         Path.GetFileName(target).Equals("AppShelf.exe", StringComparison.OrdinalIgnoreCase));
 
     public static void Launch(ShelfItem item, bool elevated = false)
     {
@@ -75,7 +85,7 @@ public static class ShellIntegration
                 throw new InvalidOperationException(L.Get("CouldNotFindAnAvailableShortcutName"));
         }
         var existed = File.Exists(shortcutPath);
-        var executable = Environment.ProcessPath ?? throw new InvalidOperationException(L.Get("CouldNotDetermineTheApplicationPath"));
+        var executable = Launcher ?? throw new InvalidOperationException(L.Get("CouldNotDetermineTheApplicationPath"));
         if (Path.GetFileNameWithoutExtension(executable).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException(L.Get("LaunchAppShelfExeDirectlyToUseShortcuts"));
         var link = (IShellLinkW)new ShellLink();
@@ -83,17 +93,63 @@ public static class ShellIntegration
         {
             link.SetPath(executable);
             link.SetArguments($"--folder {folder.Id:D} --surface {surface} --data-dir \"{dataPath.TrimEnd('\\')}\"");
-            link.SetWorkingDirectory(AppContext.BaseDirectory);
+            // The package folder changes with every update; the alias needs no working directory.
+            link.SetWorkingDirectory(AppLocations.IsPackaged ? "" : AppContext.BaseDirectory);
             link.SetDescription(L.Get("OpenFolder2") + folder.Name + L.Get("InAppShelf"));
-            link.SetIconLocation(iconPath ?? executable, 0);
+            link.SetIconLocation(iconPath ?? Environment.ProcessPath ?? executable, 0);
             var store = (IPropertyStore)link;
             SetProperty(store, AppIdKey, FolderAppId(folder.Id));
             store.Commit();
-            ((IPersistFile)link).Save(shortcutPath, true);
+            SaveReplacing(link, shortcutPath, folder.Id, dataPath);
         }
         finally { Marshal.FinalReleaseComObject(link); }
         NotifyShortcut(shortcutPath, existed ? 0x2000u : 2u);
         return shortcutPath;
+    }
+
+    /// <summary>
+    /// Writes a hidden draft on the destination volume, checks it, then swaps it in with one rename.
+    /// Rewriting a shortcut in place on a OneDrive desktop once left every folder shortcut filled with zeros.
+    /// A sibling draft also works when the desktop and the profile live on different drives.
+    /// </summary>
+    private static void SaveReplacing(IShellLinkW link, string shortcutPath, Guid folderId, string dataPath)
+    {
+        // File.Move across volumes copies and deletes; only a sibling draft guarantees a rename.
+        var temporary = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(shortcutPath))!, $".AppShelf-{Guid.NewGuid():N}.tmp");
+        try
+        {
+            ((IPersistFile)link).Save(temporary, true);
+            File.SetAttributes(temporary, FileAttributes.Hidden | FileAttributes.Temporary);
+            if (IsDamagedShortcut(temporary) || !IsFolderShortcut(ReadLink(temporary), folderId, dataPath))
+                throw new IOException(L.F("CouldNotWriteShortcut", shortcutPath));
+            for (var attempt = 0; ; attempt++)
+            {
+                var existed = File.Exists(shortcutPath);
+                if (existed && !IsFolderShortcut(ReadShortcut(shortcutPath), folderId, dataPath))
+                    throw new InvalidOperationException(L.Get("ThisShortcutBelongsToAnotherApplication"));
+                try { File.Move(temporary, shortcutPath, existed); break; }
+                catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && attempt < 4 && File.Exists(temporary))
+                { Thread.Sleep(40 * (attempt + 1)); }
+            }
+            File.SetAttributes(shortcutPath, FileAttributes.Normal);
+        }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+    }
+
+    /// <summary>
+    /// A file named .lnk without the Shell Link header (4C 00 00 00), e.g. zeroed by a sync conflict.
+    /// Such a file opens nothing and shows a blank icon.
+    /// </summary>
+    public static bool IsDamagedShortcut(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return false;
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            Span<byte> header = stackalloc byte[4];
+            return stream.Read(header) < 4 || header[0] != 0x4C || header[1] != 0 || header[2] != 0 || header[3] != 0;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
     public sealed record ShortcutDetails(string Path, string Target, string Arguments, string IconPath, string AppId, string WorkingDirectory = "", int IconIndex = 0);
@@ -127,7 +183,11 @@ public static class ShellIntegration
 
     public static ShortcutDetails? ReadShortcut(string path)
     {
-        if (!File.Exists(path) || !path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)) return null;
+        return path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? ReadLink(path) : null;
+    }
+    private static ShortcutDetails? ReadLink(string path)
+    {
+        if (!File.Exists(path)) return null;
         var link = (IShellLinkW)new ShellLink();
         try
         {
@@ -148,15 +208,17 @@ public static class ShellIntegration
     }
     public static bool IsFolderShortcut(ShortcutDetails? shortcut, Guid folderId, string dataPath)
     {
-        if (shortcut is null || shortcut.AppId != FolderAppId(folderId) ||
-            !string.Equals(shortcut.Target, Environment.ProcessPath, StringComparison.OrdinalIgnoreCase)) return false;
+        if (shortcut is null || shortcut.AppId != FolderAppId(folderId) || !IsLauncher(shortcut.Target)) return false;
         var args = SplitArguments(shortcut.Arguments);
         string? Argument(string key) { var i = Array.IndexOf(args, key); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
         if (!Guid.TryParse(Argument("--folder"), out var id) || id != folderId) return false;
+        // Without --data-dir the shortcut opens the default profile (a pinned folder's relaunch command omits it).
         var directory = Argument("--data-dir");
-        try { return directory is not null && string.Equals(Path.GetFullPath(directory).TrimEnd('\\'), Path.GetFullPath(dataPath).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase); }
+        try { return directory is null ? IsDefaultProfile(dataPath) : string.Equals(Path.GetFullPath(directory).TrimEnd('\\'), Path.GetFullPath(dataPath).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase); }
         catch (ArgumentException) { return false; }
     }
+    private static bool IsDefaultProfile(string dataPath) =>
+        string.Equals(Path.GetFullPath(dataPath).TrimEnd('\\'), Path.GetFullPath(AppLocations.DefaultDataPath()).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
     public static string[] SplitArguments(string command)
     {
         var buffer = CommandLineToArgvW("AppShelf.exe " + command, out var count);
@@ -180,11 +242,19 @@ public static class ShellIntegration
         Marshal.ThrowExceptionForHR(SHGetPropertyStoreForWindow(window, ref iid, out var store));
         try
         {
-            // A manually pinned window relaunches the folder, rather than its pinning dialog.
-            SetProperty(store, new PropertyKey(AppIdKey.FormatId, 2),
-                $"\"{Environment.ProcessPath}\" --folder {folder.Id:D} --surface taskbar --data-dir \"{dataPath.TrimEnd('\\')}\"");
-            SetProperty(store, new PropertyKey(AppIdKey.FormatId, 3), iconPath + ",0");
-            SetProperty(store, new PropertyKey(AppIdKey.FormatId, 4), folder.Name);
+            // A manually pinned window relaunches the folder, rather than its pinning dialog. Windows rejects a command
+            // longer than MAX_PATH, and without it also the folder's name on its button; so the command leaves out
+            // the defaults (taskbar surface, default profile). A still longer one keeps the button, unnamed and unpinnable.
+            var command = $"\"{Launcher}\" --folder {folder.Id:D}";
+            if (!IsDefaultProfile(dataPath)) command += $" --data-dir \"{dataPath.TrimEnd('\\')}\"";
+            try
+            {
+                SetProperty(store, new PropertyKey(AppIdKey.FormatId, 2), command);
+                SetProperty(store, new PropertyKey(AppIdKey.FormatId, 3), iconPath + ",0");
+                SetProperty(store, new PropertyKey(AppIdKey.FormatId, 4), folder.Name);
+            }
+            catch (COMException) { }
+            // Set regardless: without its own AppID the folder's window would join one shared AppShelf button.
             SetProperty(store, AppIdKey, FolderAppId(folder.Id));
         }
         finally { Marshal.FinalReleaseComObject(store); }
@@ -196,6 +266,11 @@ public static class ShellIntegration
     {
         get
         {
+            if (AppLocations.IsPackaged)
+            {
+                try { return PackageStartup.IsEnabled(PackageStartup.Read()); }
+                catch (Exception ex) when (ex is COMException or TimeoutException) { return false; }
+            }
             try { using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run"); return key?.GetValue("AppShelf") is not null; }
             catch (System.Security.SecurityException) { return false; }
             catch (UnauthorizedAccessException) { return false; }
@@ -204,9 +279,28 @@ public static class ShellIntegration
 
     public static void SetRunAtStartup(bool enabled, string dataPath)
     {
+        if (AppLocations.IsPackaged)
+        {
+            // Windows starts the package without arguments; App recognizes the startup task and stays in the background.
+            var state = PackageStartup.Set(enabled);
+            if (enabled && state == PackageStartup.State.DisabledByUser)
+                throw new InvalidOperationException(L.Get("StartupDisabledInSettings"));
+            if (PackageStartup.IsEnabled(state) != enabled)
+                throw new InvalidOperationException(L.Get("StartupManagedByWindows"));
+            return;
+        }
         using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
         if (enabled) key.SetValue("AppShelf", $"\"{Environment.ProcessPath}\" --background --data-dir \"{dataPath.TrimEnd('\\')}\"");
         else key.DeleteValue("AppShelf", false);
+    }
+
+    public static Task<bool> ReadRunAtStartupAsync() => AppLocations.IsPackaged
+        ? Task.Run(() => PackageStartup.IsEnabled(PackageStartup.Read())) : Task.FromResult(RunAtStartup);
+
+    public static async Task SetRunAtStartupAsync(bool enabled, string dataPath)
+    {
+        if (AppLocations.IsPackaged) await Task.Run(() => SetRunAtStartup(enabled, dataPath));
+        else SetRunAtStartup(enabled, dataPath);
     }
 
     public static Task<List<ShelfItem>> InstalledApplicationsAsync() => RunSta(() =>

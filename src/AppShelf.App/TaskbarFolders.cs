@@ -124,7 +124,7 @@ public sealed class FolderTaskbarWindow : Window
             var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
             Icon = decoder.Frames.OrderByDescending(x => x.PixelWidth).First();
             var handle = new WindowInteropHelper(this).Handle;
-            // Windows rejects relaunch commands longer than MAX_PATH (deep profile paths); the button still works without it.
+            // The window identity is best effort: the button still opens its folder without it.
             try { ShellIntegration.SetFolderWindowIdentity(handle, folder, App.Current.Session.Store.DirectoryPath, art.Path); }
             catch (System.Runtime.InteropServices.COMException ex) { App.Current.Log(ex); }
             await RefreshPreviewAsync(folder, currentRevision);

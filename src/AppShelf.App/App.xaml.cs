@@ -12,6 +12,7 @@ public partial class App : Application
     public DesktopSingleClick? DesktopClicks { get; private set; }
     public ShelfApi? Api { get; private set; }
     public ShelfRepair? Repair { get; private set; }
+    public UpdateNotifier? Updates { get; private set; }
     private readonly CancellationTokenSource apiStop = new();
     private SingleInstance? instance;
     private TrayIcon? tray;
@@ -29,18 +30,23 @@ public partial class App : Application
         };
         try
         {
-            var directory = Argument(e.Args, "--data-dir") ?? (File.Exists(Path.Combine(AppContext.BaseDirectory, "portable.flag"))
-                ? Path.Combine(AppContext.BaseDirectory, "data")
-                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppShelf"));
+            var defaultDirectory = AppLocations.DefaultDataPath();
+            var directory = Argument(e.Args, "--data-dir") ?? defaultDirectory;
             instance = new SingleInstance(directory);
             var folderId = Argument(e.Args, "--folder");
             var surface = Argument(e.Args, "--surface") == "desktop" ? "desktop" : "taskbar";
-            var command = e.Args.Contains("--quit") ? "quit" : folderId is not null ? "folder:" + folderId + ":" + surface : e.Args.Contains("--background") ? "background" : "editor";
+            // The package's startup task cannot pass --background, so a sign-in start is recognized by its activation kind.
+            var background = e.Args.Contains("--background") || (e.Args.Length == 0 && AppLocations.IsPackaged && PackageStartup.LaunchedAtSignIn());
+            var command = e.Args.Contains("--quit") ? "quit" : folderId is not null ? "folder:" + folderId + ":" + surface : background ? "background" : "editor";
             if (!instance.IsPrimary)
             {
                 await instance.ForwardAsync(command);
                 Shutdown(); return;
             }
+            // Custom QA profiles stay empty unless the caller explicitly requests an import.
+            var isDefaultProfile = string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory)),
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(defaultDirectory)), StringComparison.OrdinalIgnoreCase);
+            ImportProfile(directory, Argument(e.Args, "--import-profile") ?? (AppLocations.IsPackaged && isDefaultProfile ? AppLocations.LegacyDataPath : null));
             ShellIntegration.Initialize();
             Session = new ShelfSession(directory);
             ApplyLanguage();
@@ -58,6 +64,7 @@ public partial class App : Application
                 try { await Repair.CheckAllAsync(); } catch (Exception ex) { Log(ex); }
             });
             TaskbarFolders = new TaskbarFolders(Session);
+            Updates = new UpdateNotifier(Session);
             try { DesktopClicks = new DesktopSingleClick(Session.Store.DirectoryPath, id => ShowFolder(id, true, toggle: true)) { Error = Log }; }
             catch (Exception ex) { Log(ex); }
             SystemEvents.UserPreferenceChanged += PreferenceChanged;
@@ -70,6 +77,19 @@ public partial class App : Application
             if (Session.Store.RecoveryMessage is { } recovery) MessageBox.Show(recovery, "AppShelf", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex) { MessageBox.Show(ex.Message, L.Get("CouldNotOpenAppShelf"), MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(1); }
+    }
+
+    /// <summary>
+    /// An empty profile takes over another one: the Store version's first start adopts a plain installation's profile,
+    /// and --import-profile brings in a portable copy's data folder. The source stays as it was.
+    /// </summary>
+    private static void ImportProfile(string directory, string? source)
+    {
+        if (source is null || File.Exists(Path.Combine(directory, "shelf.json")) || !File.Exists(Path.Combine(source, "shelf.json")) ||
+            string.Equals(Path.GetFullPath(source).TrimEnd('\\'), Path.GetFullPath(directory).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) return;
+        try { ProfileCopy.Copy(source, directory); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
+        { MessageBox.Show(ex.Message, L.Get("CouldNotImportProfile"), MessageBoxButton.OK, MessageBoxImage.Warning); }
     }
 
     private static string? Argument(string[] args, string key)
@@ -135,12 +155,36 @@ public partial class App : Application
             var item = new System.Windows.Controls.MenuItem { Header = text };
             item.Click += (_, _) => action(); menu.Items.Add(item);
         }
+        if (Updates is { Available: true } updates) { Add(updates.Label, updates.Open); menu.Items.Add(new System.Windows.Controls.Separator()); }
         Add(L.Get("OpenAppShelf"), () => ShowEditor());
         foreach (var folder in Session.Configuration.Items.Where(x => x.IsFolder).Take(15))
         { var id = folder.Id; Add(folder.Name, () => ShowFolder(id)); }
         menu.Items.Add(new System.Windows.Controls.Separator());
+        Add(L.Get("SupportOnBoosty"), OpenSupportPage);
         Add(L.Get("Quit"), Quit);
         return menu;
+    }
+
+    /// <summary>Opens the author's support page in the default browser.</summary>
+    public void OpenSupportPage() => OpenPage(AppLinks.Support);
+    public void OpenGitHubPage() => OpenPage(AppLinks.GitHub);
+    public void OpenNewIssuePage() { if (AppLinks.NewIssue is { } issue) OpenPage(issue.AbsoluteUri); }
+    public void OpenStoreReview()
+    {
+        if (AppLinks.MicrosoftStoreReview is not { } review) return;
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(review.AbsoluteUri) { UseShellExecute = true }); }
+        catch (System.ComponentModel.Win32Exception) { OpenPage(AppLinks.MicrosoftStoreWeb!.AbsoluteUri); }
+    }
+    public void OpenStorePage()
+    {
+        if (AppLinks.MicrosoftStore is not { } store) return;
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(store.AbsoluteUri) { UseShellExecute = true }); }
+        catch (System.ComponentModel.Win32Exception) { OpenPage(AppLinks.MicrosoftStoreWeb!.AbsoluteUri); }
+    }
+    public void OpenPage(string url)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch (System.ComponentModel.Win32Exception ex) { Report(ex); }
     }
 
     private void OnChanged() { ApplyLanguage(); RefreshTheme(); }
@@ -175,6 +219,7 @@ public partial class App : Application
         apiStop.Cancel();
         SystemEvents.UserPreferenceChanged -= PreferenceChanged;
         tray?.Dispose();
+        Updates?.Dispose();
         TaskbarFolders?.Dispose();
         DesktopClicks?.Dispose();
         Publisher?.Dispose();

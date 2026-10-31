@@ -13,3 +13,19 @@ at runtime. Windows fonts and system APIs are provided by the operating system.
 The AppShelf application icon is an original vector-derived asset.
 
 AppShelf does not include source code, images or text copied from AppGroup.
+
+Settings link artwork:
+- Microsoft Store badges: official Microsoft artwork, downloaded from
+  https://get.microsoft.com/images/en-us%20dark.svg and
+  https://get.microsoft.com/images/ru%20dark.svg on 29 October 2026.
+  https://github.com/microsoft/app-store-badge
+- GitHub white logo lockup: official GitHub Brand Toolkit download,
+  https://brand.github.com/GitHub_Logos.zip (GitHub_Lockup_White.png),
+  downloaded on 29 October 2026.
+  https://brand.github.com/foundations/logo
+
+These marks identify links to their respective services. The GitHub button's
+background is AppShelf UI, not an official GitHub download badge. The Microsoft
+Store SVGs are preserved alongside 4x raster exports for native WPF rendering.
+GitHub and Microsoft retain their respective trademark and artwork rights;
+these assets are not covered by AppShelf's MIT license.

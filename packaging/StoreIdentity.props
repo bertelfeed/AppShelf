@@ -1,0 +1,9 @@
+<Project>
+  <!-- Public Partner Center product identity. Never put client secrets in this file. -->
+  <PropertyGroup>
+    <StoreProductId Condition="'$(StoreProductId)' == ''"></StoreProductId>
+    <StoreIdentityName></StoreIdentityName>
+    <StorePublisher></StorePublisher>
+    <StorePublisherDisplayName>bertelfeed</StorePublisherDisplayName>
+  </PropertyGroup>
+</Project>

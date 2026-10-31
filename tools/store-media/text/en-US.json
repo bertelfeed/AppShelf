@@ -1,0 +1,35 @@
+{
+  "language": "en-US",
+  "font": "Segoe UI Variable",
+  "tagline": "Your Windows apps. A little more organized.",
+  "folders": {
+    "work": "Work",
+    "dev": "Dev tools",
+    "create": "Create",
+    "games": "Games",
+    "chat": "Chat",
+    "utilities": "Utilities"
+  },
+  "screenshots": [
+    { "id": "desktop", "title": "Your apps, neatly in folders", "subtitle": "Put folders of apps on the desktop. One click opens them." },
+    { "id": "taskbar", "title": "Folders on the taskbar", "subtitle": "Each folder gets its own button, right next to your apps." },
+    { "id": "nested", "title": "Folders inside folders", "subtitle": "Keep tools grouped and go back with one click." },
+    { "id": "pages", "title": "Lots of apps? Turn the page", "subtitle": "Choose rows and columns. Scroll through pages like in Start." },
+    { "id": "style", "title": "Make every folder yours", "subtitle": "App previews, symbols or your own picture, in any color." },
+    { "id": "editor", "title": "Organize everything in one place", "subtitle": "Drag apps in, sort them, nest folders. Light or dark." }
+  ],
+  "trailer": {
+    "intro": "Your Windows apps.",
+    "introSub": "A little more organized.",
+    "scenes": {
+      "taskbar": "Open folders from the taskbar",
+      "pages": "Scroll through pages",
+      "nested": "Folders inside folders",
+      "desktop": "Or right on the desktop",
+      "editor": "Organize everything in one place",
+      "style": "Make every folder yours"
+    },
+    "outro": "AppShelf",
+    "outroSub": "Folders for your apps on Windows 11"
+  }
+}

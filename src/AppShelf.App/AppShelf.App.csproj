@@ -10,7 +10,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Resource Include="Assets\Brand\*.png" />
     <Content Include="Assets\AppShelf.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\AppShelf.png" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../AppShelf.Core/AppShelf.Core.csproj" />
     <ProjectReference Include="../AppShelf.Windows/AppShelf.Windows.csproj" />
   </ItemGroup>

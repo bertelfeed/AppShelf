@@ -17,7 +17,9 @@ public sealed class TrayIcon : IDisposable
         source = new HwndSource(new HwndSourceParameters("AppShelf.Tray") { Width = 0, Height = 0, WindowStyle = 0 });
         source.AddHook(HandleMessage);
         taskbarCreated = RegisterWindowMessage("TaskbarCreated");
-        var icon = LoadImage(IntPtr.Zero, Path.Combine(AppContext.BaseDirectory, "Assets", "AppShelf.ico"), 1, 32, 32, 0x10);
+        // The tray shows the small-icon size (16 px at 100 %); load that frame instead of shrinking the 32 px one.
+        var small = GetSystemMetrics(49);
+        var icon = LoadImage(IntPtr.Zero, Path.Combine(AppContext.BaseDirectory, "Assets", "AppShelf.ico"), 1, small, small, 0x10);
         data = new NotifyData { Size = (uint)Marshal.SizeOf<NotifyData>(), Window = source.Handle, Id = 1, Flags = 7, Callback = 0x8001, Icon = icon, Tip = L.Get("AppShelfAppFolders") };
         Shell_NotifyIcon(0, ref data);
     }
@@ -57,6 +59,7 @@ public sealed class TrayIcon : IDisposable
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] private static extern bool Shell_NotifyIcon(uint message, ref NotifyData data);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr LoadImage(IntPtr instance, string name, uint type, int cx, int cy, uint flags);
     [DllImport("user32.dll")] private static extern bool DestroyIcon(IntPtr icon);
+    [DllImport("user32.dll")] private static extern int GetSystemMetrics(int index);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern uint RegisterWindowMessage(string message);
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr window);
     [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);

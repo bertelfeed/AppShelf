@@ -16,6 +16,17 @@ The second command produces an isolated portable ZIP and SHA-256 file under
 `artifacts/`. It does not read or include the normal user's profile. NuGet and
 CLI caches are local to the checkout and ignored by Git.
 
+To build the MSIX test package, install the Windows SDK and run `./build.ps1 -Msix`.
+`./build.ps1 -Check -Package -Msix` produces the ZIP and the MSIX from one publish, so
+both contain the same binaries. `-Msix` cannot be combined with `-Publish`. Set `-IdentityName`,
+`-Publisher` and `-PublisherDisplayName` to the reserved Partner Center identity for
+a Store submission. The default identity is only for local package development.
+Building a package does not install it or verify packaged startup, aliases or updates.
+
+The Store release workflow and its offline checks are described in
+[Store publishing setup](docs/STORE-PUBLISHING.md). Run `./tools/check-store-integration.ps1`
+when changing the release scripts. No credentials or network requests are needed.
+
 There are native window and Shell checks. Run the full suite in an unlocked
 interactive Windows session. Hosted CI explicitly skips the two checks that
 switch the real foreground window; it reports them as SKIP, never as PASS.

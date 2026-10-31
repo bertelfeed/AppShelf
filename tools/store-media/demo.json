@@ -1,0 +1,59 @@
+{
+  "comment": "Demonstration collection for Store media. Folder names come from text/<language>.json; apps are matched by their Start menu name on the capturing PC, and missing ones are skipped.",
+  "appearance": 2,
+  "defaults": { "DesktopIconScale": 200, "TaskbarIconScale": 200 },
+  "folders": [
+    {
+      "key": "work",
+      "taskbar": true,
+      "settings": { "Columns": 4, "Rows": 3, "ShowLabels": true },
+      "apps": [
+        ["Word"], ["Excel"], ["PowerPoint"], ["Outlook (classic)", "Outlook"], ["OneNote"], ["Microsoft Teams"],
+        ["Microsoft To Do"], ["Microsoft Edge"], ["Obsidian"], ["Figma"], ["Notepad++"]
+      ],
+      "folders": [
+        {
+          "key": "dev",
+          "settings": { "Columns": 4, "Rows": 3, "ShowLabels": true, "Face": 1, "FaceSymbol": "", "FaceColor": "#0067C0", "FaceOpacity": 70 },
+          "apps": [
+            ["Visual Studio 2022"], ["Visual Studio Code"], ["Cursor"], ["Docker Desktop"], ["GitHub Desktop"],
+            ["PyCharm 2025.1.1.1", "PyCharm"], ["Windows PowerShell"], ["WSL"], ["Git Bash"], ["PuTTY"], ["Oracle VirtualBox"]
+          ]
+        }
+      ]
+    },
+    {
+      "key": "create",
+      "taskbar": true,
+      "settings": { "Columns": 4, "Rows": 3, "ShowLabels": true, "FaceColor": "#F7630C", "FaceOpacity": 55 },
+      "apps": [
+        ["Adobe Photoshop 2025"], ["Blender 5.2", "Blender 3D"], ["OBS Studio (64bit)"], ["Paint"], ["Microsoft Clipchamp"], ["CapCut"],
+        ["NVIDIA Canvas"], ["VLC media player"], ["Adobe Acrobat"], ["Figma"]
+      ]
+    },
+    {
+      "key": "games",
+      "taskbar": true,
+      "settings": { "Columns": 4, "Rows": 2, "ShowLabels": true, "Face": 1, "FaceSymbol": "", "FaceColor": "#8764B8", "FaceOpacity": 80 },
+      "apps": [
+        ["Steam"], ["Epic Games Launcher"], ["XBOX"], ["GOG GALAXY"], ["EA"], ["Ubisoft Connect"], ["Minecraft Launcher"], ["Riot Client"],
+        ["Solitaire & Casual Games"], ["Prism Launcher"], ["Roblox Player"], ["CurseForge"], ["Overwolf"], ["BlueStacks 5"]
+      ]
+    },
+    {
+      "key": "chat",
+      "taskbar": true,
+      "settings": { "Columns": 4, "Rows": 2, "ShowLabels": true, "Face": 1, "FaceSymbol": "", "FaceColor": "#0099BC", "FaceOpacity": 80 },
+      "apps": [ ["Telegram Desktop", "Telegram"], ["Discord"], ["WhatsApp"], ["Microsoft Teams"], ["Skype"], ["TeamSpeak"] ]
+    },
+    {
+      "key": "utilities",
+      "taskbar": false,
+      "settings": { "Columns": 4, "Rows": 3, "ShowLabels": true },
+      "apps": [
+        ["7-Zip File Manager"], ["Everything"], ["WizTree"], ["CPU-Z"], ["TechPowerUp GPU-Z"], ["PowerToys (Preview)", "PowerToys"],
+        ["Microsoft Defender"], ["qBittorrent"], ["WinRAR"], ["Hard Disk Sentinel"]
+      ]
+    }
+  ]
+}

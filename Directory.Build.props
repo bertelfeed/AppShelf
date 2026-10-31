@@ -1,4 +1,5 @@
 <Project>
+  <Import Project="$(MSBuildThisFileDirectory)packaging\StoreIdentity.props" Condition="Exists('$(MSBuildThisFileDirectory)packaging\StoreIdentity.props')" />
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
