@@ -436,6 +436,8 @@ internal static class Program
             Expect(AppLinks.StorePageFor("9aaaaaaaaaaa")!.AbsoluteUri == "ms-windows-store://pdp/?ProductId=9AAAAAAAAAAA");
             Expect(AppLinks.StorePageFor("9AAAAAAAAAAA", web: true)!.AbsoluteUri == "https://apps.microsoft.com/detail/9AAAAAAAAAAA");
             Expect(Uri.TryCreate(AppLinks.GitHub, UriKind.Absolute, out var gitHub) && gitHub.Scheme == "https" && gitHub.Host == "github.com", "Repository link is missing from build metadata");
+            Expect(AppLinks.WebsiteFor("ru-RU").AbsoluteUri == AppLinks.Website + "ru/" && AppLinks.WebsiteFor("en-US").AbsoluteUri == AppLinks.Website &&
+                AppLinks.WebsiteFor(null).AbsoluteUri == AppLinks.Website, "The website link ignores the interface language");
         });
         Check("Feedback links: Store rating needs a valid product ID and bug reports open the issue template picker", () =>
         {

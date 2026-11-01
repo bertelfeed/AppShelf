@@ -1,7 +1,7 @@
 # Contributing
 
 AppShelf is a Windows 11 desktop application written in C# and WPF. The current
-development preview is 0.6.0; the first stable release is planned as 1.0.
+development preview is 0.6.1; the first stable release is planned as 1.0.
 
 ## Build and check
 

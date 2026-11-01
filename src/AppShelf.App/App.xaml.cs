@@ -206,6 +206,7 @@ public partial class App : Application
     /// <summary>Opens the author's support page in the default browser.</summary>
     public void OpenSupportPage() => OpenPage(AppLinks.Support);
     public void OpenGitHubPage() => OpenPage(AppLinks.GitHub);
+    public void OpenWebsite() => OpenPage(AppLinks.WebsiteFor(Session.Configuration.Language).AbsoluteUri);
     public void OpenNewIssuePage() { if (AppLinks.NewIssue is { } issue) OpenPage(issue.AbsoluteUri); }
     public void OpenStoreReview()
     {

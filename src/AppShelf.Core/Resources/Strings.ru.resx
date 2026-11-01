@@ -812,6 +812,7 @@
   <data xml:space="preserve" name="StartupManagedByWindows"><value>Политика Windows не позволяет изменить автозапуск. Проверьте параметры автозагрузки устройства.</value></data>
   <data xml:space="preserve" name="InvalidDesktopArchive"><value>Описание архива ярлыков рабочего стола повреждено. Профиль не был перенесён.</value></data>
   <data xml:space="preserve" name="GitHub"><value>GitHub</value></data>
+  <data xml:space="preserve" name="Website"><value>Сайт</value></data>
   <data xml:space="preserve" name="MicrosoftStore"><value>Microsoft Store</value></data>
   <data xml:space="preserve" name="OpenInMicrosoftStore"><value>Открыть AppShelf в Microsoft Store</value></data>
   <data xml:space="preserve" name="MicrosoftStoreNotPublished"><value>Ссылка на Store появится после публикации приложения.</value></data>

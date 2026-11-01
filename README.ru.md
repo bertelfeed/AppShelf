@@ -3,7 +3,7 @@
 <p align="center">Ваши приложения Windows. В своём порядке.</p>
 <p align="center">
   <a href="https://github.com/bertelfeed/AppShelf/actions/workflows/build.yml"><img src="https://github.com/bertelfeed/AppShelf/actions/workflows/build.yml/badge.svg" alt="Сборка для Windows"></a>
-  <img src="https://img.shields.io/badge/preview-0.6.0-0078D4" alt="Предварительная версия 0.6.0">
+  <img src="https://img.shields.io/badge/preview-0.6.1-0078D4" alt="Предварительная версия 0.6.1">
   <img src="https://img.shields.io/badge/Windows-11%20x64-0078D4" alt="Windows 11 x64">
   <img src="https://img.shields.io/badge/C%23-.NET%2010-512BD4?logo=dotnet&amp;logoColor=white" alt="C# и .NET 10">
   <img src="https://img.shields.io/badge/UI-WPF%20%C2%B7%20Fluent-0078D4" alt="WPF и Fluent">
@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/f4175c13-16dc-4ee1-8b7c-5a06014b4fa8
 Меню остаётся маленьким: название, значки приложений и вложенные папки. Всё остальное — в
 редакторе.
 
-**0.6.0 — предварительная версия, первым стабильным релизом станет 1.0.** Интерфейс на
+**0.6.1 — предварительная версия, первым стабильным релизом станет 1.0.** Интерфейс на
 **русском и английском**. Язык меняется в **Параметры → Язык** и применяется сразу.
 Новый профиль берёт язык Windows, а для других языков выбирает английский.
 

@@ -24,4 +24,4 @@ build metadata and checkpoint descriptions were normalized for standalone builds
 This is a curated, reproducible history, not a claim that old Git commit IDs were
 recovered. Personal session logs, profile data and machine paths are not published.
 
-The first stable release will be **1.0**. Version **0.6.0** is a development preview.
+The first stable release will be **1.0**. Version **0.6.1** is a development preview.

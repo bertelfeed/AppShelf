@@ -258,6 +258,7 @@ public sealed class SettingsDialog : ShelfDialog
             System.Windows.Automation.AutomationProperties.SetName(button, label);
             button.Click += (_, _) => open(); feedback.Children.Add(button);
         }
+        Feedback(L.Get("Website"), AppLinks.WebsiteFor(config.Language), App.Current.OpenWebsite);
         Feedback(L.Get("ReportBug"), AppLinks.NewIssue, App.Current.OpenNewIssuePage);
         Feedback(L.Get("RateInMicrosoftStore"), AppLinks.MicrosoftStoreReview, App.Current.OpenStoreReview);
         if (feedback.Children.Count > 0) Body.Children.Add(feedback);

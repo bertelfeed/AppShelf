@@ -1,7 +1,17 @@
-# AppShelf 0.6.0 — development preview
+# AppShelf 0.6.1 — development preview
 
 Windows 11 folders for your desktop and taskbar, with nested menus and optional
 MCP integration. This is a preview on the way to the first stable 1.0 release.
+
+## New in 0.6.1
+
+- Update notice in the editor and tray menu when a new version is out; Settings can turn it off.
+- Settings link to the new website, GitHub and Report a bug.
+- The MCP server also starts as `AppShelf.exe --mcp` (see MCP.md).
+- The folder settings dialog fits longer translations.
+- Checks run on hosted CI runners without an interactive shell.
+
+## Features
 
 - Full English and Russian interfaces with immediate, persistent language switching.
 - Native Fluent editor with Mica, compact acrylic menus and light/dark themes.

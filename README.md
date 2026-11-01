@@ -3,7 +3,7 @@
 <p align="center">Your Windows apps. A little more organized.</p>
 <p align="center">
   <a href="https://github.com/bertelfeed/AppShelf/actions/workflows/build.yml"><img src="https://github.com/bertelfeed/AppShelf/actions/workflows/build.yml/badge.svg" alt="Windows build"></a>
-  <img src="https://img.shields.io/badge/preview-0.6.0-0078D4" alt="Preview 0.6.0">
+  <img src="https://img.shields.io/badge/preview-0.6.1-0078D4" alt="Preview 0.6.1">
   <img src="https://img.shields.io/badge/Windows-11%20x64-0078D4" alt="Windows 11 x64">
   <img src="https://img.shields.io/badge/C%23-.NET%2010-512BD4?logo=dotnet&amp;logoColor=white" alt="C# and .NET 10">
   <img src="https://img.shields.io/badge/UI-WPF%20%C2%B7%20Fluent-0078D4" alt="WPF with Fluent">
@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/0296c093-1db0-49cc-9b3c-024e50979659
 Put your apps into folders that open from the **taskbar or the desktop**. The menu stays small:
 a title, your app icons and nested folders. Everything else lives in the editor.
 
-**0.6.0 is a development preview; the first stable release will be 1.0.** The interface is
+**0.6.1 is a development preview; the first stable release will be 1.0.** The interface is
 in **English and Russian**. Switch it in **Settings → Language**, and the change applies at once.
 A new profile follows the Windows language and falls back to English.
 

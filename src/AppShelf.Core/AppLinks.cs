@@ -34,6 +34,13 @@ public static class AppLinks
     private static string Metadata(string key) => typeof(AppLinks).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
         .FirstOrDefault(attribute => attribute.Key == key)?.Value ?? "";
 
+    /// <summary>The project website (site/ in the repository, on GitHub Pages).</summary>
+    public const string Website = "https://bertelfeed.github.io/AppShelf/";
+
+    /// <summary>The website page in the interface language: Russian has its own page, every other language gets English.</summary>
+    public static Uri WebsiteFor(string? language) =>
+        new(Localization.NormalizeLanguage(language) == "ru-RU" ? Website + "ru/" : Website);
+
     /// <summary>The author's Boosty page; also listed in .github/FUNDING.yml.</summary>
     public const string Support = "https://boosty.to/bertelfeed/donate";
 }

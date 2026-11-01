@@ -812,6 +812,7 @@ The application was removed or moved. Right-click it in AppShelf and choose Prop
   <data xml:space="preserve" name="StartupManagedByWindows"><value>Windows policy prevents this startup change. Check your device's startup settings.</value></data>
   <data xml:space="preserve" name="InvalidDesktopArchive"><value>The desktop shortcut archive manifest is invalid. The profile was not imported.</value></data>
   <data xml:space="preserve" name="GitHub"><value>GitHub</value></data>
+  <data xml:space="preserve" name="Website"><value>Website</value></data>
   <data xml:space="preserve" name="MicrosoftStore"><value>Microsoft Store</value></data>
   <data xml:space="preserve" name="OpenInMicrosoftStore"><value>Open AppShelf in Microsoft Store</value></data>
   <data xml:space="preserve" name="MicrosoftStoreNotPublished"><value>The Store link will be available after the app is published.</value></data>
