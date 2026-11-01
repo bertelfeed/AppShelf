@@ -1,9 +1,8 @@
 name: Website
 
 # Publishes site/ to GitHub Pages: https://bertelfeed.github.io/AppShelf/
-# Off until the app is live in Microsoft Store, so the Store buttons never lead to a missing page.
-# To turn it on: Settings → Pages → Source: GitHub Actions, then add the repository variable SITE_ENABLED = true
-# (Settings → Secrets and variables → Actions → Variables). A manual run publishes regardless of the variable.
+# Pushes publish while the repository variable SITE_ENABLED is true (Settings → Secrets and variables → Actions →
+# Variables), with Settings → Pages → Source set to GitHub Actions. A manual run publishes regardless of the variable.
 
 on:
   push:
@@ -24,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:

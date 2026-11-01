@@ -7,25 +7,43 @@
   <meta name="description" content="Put your Windows apps into folders that open from the taskbar or the desktop. Nested folders, pages, your own icons and colors.">
   <meta name="theme-color" content="#0b0a18">
   <link rel="icon" href="assets/appshelf.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://bertelfeed.github.io/AppShelf/">
   <link rel="alternate" hreflang="en" href="https://bertelfeed.github.io/AppShelf/">
   <link rel="alternate" hreflang="ru" href="https://bertelfeed.github.io/AppShelf/ru/">
-  <meta property="og:title" content="AppShelf">
-  <meta property="og:description" content="Your Windows apps. A little more organized.">
-  <meta property="og:image" content="https://bertelfeed.github.io/AppShelf/assets/en/promo.webp">
+  <link rel="alternate" hreflang="x-default" href="https://bertelfeed.github.io/AppShelf/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AppShelf">
+  <meta property="og:url" content="https://bertelfeed.github.io/AppShelf/">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="ru_RU">
+  <meta property="og:title" content="AppShelf — app folders for the Windows 11 taskbar and desktop">
+  <meta property="og:description" content="Your Windows apps, a little more organized.">
+  <meta property="og:image" content="https://bertelfeed.github.io/AppShelf/assets/en/share.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="AppShelf folders on the Windows 11 taskbar and desktop">
+  <meta name="twitter:card" content="summary_large_image">
   <script>
-    // First visit follows the browser language; a choice made with the switch wins from then on.
+    // First visit follows the browser languages; a choice made with the switch wins from then on.
+    // ?lang=en comes from the switch on the Russian page, so English stays reachable even when storage is blocked.
     (function () {
       var chosen = null;
+      if (/[?&]lang=en\b/.test(location.search)) {
+        try { localStorage.setItem("appshelf-lang", "en"); } catch (e) { /* storage blocked */ }
+        return;
+      }
       try { chosen = localStorage.getItem("appshelf-lang"); } catch (e) { /* storage blocked */ }
-      if (chosen === "ru" || (!chosen && /^ru\b/i.test(navigator.language || ""))) location.replace("ru/");
+      var preferred = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+      if (chosen === "ru" || (!chosen && /^ru\b/i.test(preferred))) location.replace("ru/" + location.search + location.hash);
     })();
   </script>
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
+  <a class="skip" href="#main">Skip to content</a>
   <header class="wrap top">
-    <a class="brand" href="./"><img src="assets/appshelf.svg" alt="">AppShelf</a>
-    <nav>
+    <a class="brand" href="#"><img src="assets/appshelf.svg" alt="">AppShelf</a>
+    <nav aria-label="Main">
       <a class="section" href="#features">Features</a>
       <a class="section" href="#get">Get it</a>
       <a class="section" href="https://github.com/bertelfeed/AppShelf">GitHub</a>
@@ -33,65 +51,65 @@
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <div class="wrap hero">
-      <h1>Your Windows apps <span>A little more organized</span></h1>
+      <h1>Your Windows apps<span class="visually-hidden">. </span> <span class="tagline">A little more organized</span></h1>
       <p class="lead">AppShelf puts your apps into folders that open from the taskbar or the desktop. The menu stays small: a title, your app icons and the folders inside it.</p>
       <div class="actions">
-        <a class="store-badge" href="https://apps.microsoft.com/detail/9PBGTGLG9RD8"><img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="191" height="52"></a>
-        <a class="github-badge" href="https://github.com/bertelfeed/AppShelf/releases/latest"><img src="assets/github.svg" alt="Download from GitHub" width="114" height="26"></a>
+        <a class="badge" href="https://apps.microsoft.com/detail/9PBGTGLG9RD8"><img src="assets/store-en.svg" alt="Download from the Microsoft Store" width="190" height="52"></a>
+        <a class="badge" href="https://github.com/bertelfeed/AppShelf/releases/latest"><img src="assets/github-en.svg" alt="Download from GitHub" width="138" height="52"></a>
       </div>
-      <p class="note">Windows 11 x64 · English and Russian · Open source under the MIT license</p>
+      <p class="note">Windows&nbsp;11 x64 · English and Russian · Open source under the MIT License</p>
       <div class="video">
-        <video src="assets/en/promo.mp4" poster="assets/en/promo.webp" autoplay muted loop playsinline controls preload="metadata" aria-label="AppShelf video"></video>
+        <video src="assets/en/promo.mp4" poster="assets/en/promo.webp" muted loop playsinline controls preload="none" aria-label="AppShelf in action: folders open from the taskbar and the desktop, nested folders, pages and folder settings"></video>
       </div>
     </div>
 
     <section id="features" class="wrap">
       <h2>Folders where you need them</h2>
-      <p class="intro">Everything else lives in the editor, a clean Windows 11 window where you build your folders.</p>
+      <p class="intro">Everything else lives in the editor, a clean Windows&nbsp;11 window where you build your folders.</p>
       <div class="features">
         <article class="feature">
           <div class="copy">
             <h3>Your apps, neatly in folders</h3>
             <p>Put folders of apps on the desktop. One click opens the menu, another starts the app.</p>
           </div>
-          <div class="shot"><img src="assets/en/desktop.webp" alt="The Work folder open on the Windows 11 desktop" width="1078" height="934" loading="lazy"></div>
+          <div class="shot"><img src="assets/en/desktop.webp" alt="The Work folder open on the Windows 11 desktop" width="734" height="734" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
             <h3>Folders on the taskbar</h3>
             <p>Each folder gets its own button next to your other apps, with a preview of what is inside and quick-launch buttons.</p>
           </div>
-          <div class="shot"><img src="assets/en/taskbar.webp" alt="A folder menu above the Windows 11 taskbar" width="900" height="780" loading="lazy"></div>
+          <div class="shot"><img src="assets/en/taskbar.webp" alt="A folder menu above the Windows 11 taskbar" width="640" height="560" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
             <h3>Folders inside folders</h3>
-            <p>Keep tools grouped. The folder's title takes you back, and so do Backspace and Alt+Left.</p>
+            <p>Keep tools grouped. The folder’s title takes you back, and so do Backspace and Alt+Left.</p>
           </div>
-          <div class="shot"><img src="assets/en/nested.webp" alt="The Dev tools folder opened inside Work" width="900" height="780" loading="lazy"></div>
+          <div class="shot"><img src="assets/en/nested.webp" alt="The Dev tools folder opened inside Work" width="640" height="560" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
             <h3>Lots of apps? Turn the page</h3>
-            <p>Choose rows and columns. When a folder holds more, scroll through its pages with the mouse wheel, the arrow keys or the dots, like in Start.</p>
+            <p>Choose rows and columns. When a folder holds more, turn its pages with the mouse wheel, Page&nbsp;Up and Page&nbsp;Down, or the dots, like in Start.</p>
           </div>
-          <div class="shot"><img src="assets/en/pages.webp" alt="A Games folder with page dots" width="900" height="780" loading="lazy"></div>
+          <div class="shot"><img src="assets/en/pages.webp" alt="A Games folder with page dots" width="640" height="560" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
             <h3>Make every folder yours</h3>
-            <p>Previews of its apps, a symbol or your own picture, in any color and opacity. Light or dark menus, and icons from 50 to 200 percent, separately for the desktop and the taskbar.</p>
+            <p>Previews of its apps, a symbol or your own picture, on a plate of any color and opacity. Light or dark menus, and icons from 50 to 200&nbsp;percent, separately for the desktop and the taskbar.</p>
           </div>
           <div class="shot"><img src="assets/en/style.webp" alt="Folder settings: layout, icon and color" width="1042" height="977" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
             <h3>Organize everything in one place</h3>
-            <p>Drag apps in, sort them and nest folders in an editor that looks like part of Windows 11.</p>
+            <p>Drag apps in, sort them and nest folders in an editor that looks like part of Windows&nbsp;11.</p>
           </div>
-          <div class="shot"><img src="assets/en/editor.webp" alt="The AppShelf editor with the Work folder" width="900" height="780" loading="lazy"></div>
+          <div class="shot"><img src="assets/en/editor.webp" alt="The AppShelf editor with the Work folder" width="946" height="833" loading="lazy"></div>
         </article>
       </div>
     </section>
@@ -105,19 +123,19 @@
         </div>
         <div class="card">
           <h3><span class="dot" style="background:var(--teal)"></span>Leaves Start alone</h3>
-          <p>These are AppShelf's own buttons, not Explorer pins. The Start menu stays as it is.</p>
+          <p>These are AppShelf’s own buttons, not Explorer pins. The Start menu stays as it is.</p>
         </div>
         <div class="card">
           <h3><span class="dot" style="background:var(--orange)"></span>Shortcuts keep working</h3>
           <p>AppShelf keeps copies of the shortcuts you add, so tidying the desktop does not break folders, and it finds apps that moved after an update.</p>
         </div>
         <div class="card">
-          <h3><span class="dot" style="background:#ffd23f"></span>Your folders stay with you</h3>
+          <h3><span class="dot" style="background:var(--yellow)"></span>Your folders stay with you</h3>
           <p>No accounts, analytics or ads. Everything is kept on your PC.</p>
           <a class="more" href="https://github.com/bertelfeed/AppShelf/blob/main/PRIVACY.md">Privacy policy</a>
         </div>
         <div class="card">
-          <h3><span class="dot" style="background:#f25f8a"></span>AI help, if you want it</h3>
+          <h3><span class="dot" style="background:var(--pink)"></span>AI help, if you want it</h3>
           <p>Let Claude or another MCP client sort your apps into folders, and undo any change. There is no chatbot inside AppShelf.</p>
           <a class="more" href="https://github.com/bertelfeed/AppShelf/blob/main/MCP.md">MCP setup</a>
         </div>
@@ -130,20 +148,20 @@
 
     <section id="get" class="wrap">
       <h2>Get AppShelf</h2>
-      <p class="intro">Requires Windows 11 x64.</p>
+      <p class="intro">Requires Windows&nbsp;11 x64.</p>
       <div class="get">
         <div class="card">
           <h3>Microsoft Store</h3>
           <p>Installs in a click and updates by itself. Buying it supports development.</p>
           <div class="actions">
-            <a class="store-badge" href="https://apps.microsoft.com/detail/9PBGTGLG9RD8"><img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="191" height="52" loading="lazy"></a>
+            <a class="badge" href="https://apps.microsoft.com/detail/9PBGTGLG9RD8"><img src="assets/store-en.svg" alt="Download from the Microsoft Store" width="190" height="52" loading="lazy"></a>
           </div>
         </div>
         <div class="card">
           <h3>GitHub</h3>
-          <p>Free and portable: extract the folder and start AppShelf.exe. .NET is included, so there is nothing else to install.</p>
+          <p>Free and portable: extract the ZIP and start AppShelf.exe. It includes .NET, so there is nothing else to install. Version 0.6.1 is a development preview.</p>
           <div class="actions">
-            <a class="github-badge" href="https://github.com/bertelfeed/AppShelf/releases/latest"><img src="assets/github.svg" alt="Download from GitHub" width="114" height="26"></a>
+            <a class="badge" href="https://github.com/bertelfeed/AppShelf/releases/latest"><img src="assets/github-en.svg" alt="Download from GitHub" width="138" height="52" loading="lazy"></a>
           </div>
         </div>
       </div>
@@ -153,7 +171,7 @@
   <footer>
     <div class="wrap">
       <span>© 2026 bertelfeed · MIT License</span>
-      <nav>
+      <nav aria-label="Project links">
         <a href="https://github.com/bertelfeed/AppShelf">GitHub</a>
         <a href="https://github.com/bertelfeed/AppShelf/issues/new/choose">Report a bug</a>
         <a href="https://github.com/bertelfeed/AppShelf/blob/main/PRIVACY.md">Privacy</a>

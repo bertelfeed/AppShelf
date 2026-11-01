@@ -3,87 +3,99 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AppShelf — папки приложений на панели задач и рабочем столе Windows 11</title>
+  <title>AppShelf — папки приложений на&nbsp;панели задач и&nbsp;рабочем столе Windows&nbsp;11</title>
   <meta name="description" content="Раскладывайте приложения Windows по папкам, которые открываются с панели задач или рабочего стола. Вложенные папки, страницы, свои значки и цвета.">
   <meta name="theme-color" content="#0b0a18">
   <link rel="icon" href="../assets/appshelf.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://bertelfeed.github.io/AppShelf/ru/">
   <link rel="alternate" hreflang="en" href="https://bertelfeed.github.io/AppShelf/">
   <link rel="alternate" hreflang="ru" href="https://bertelfeed.github.io/AppShelf/ru/">
-  <meta property="og:title" content="AppShelf">
-  <meta property="og:description" content="Ваши приложения Windows. В своём порядке.">
-  <meta property="og:image" content="https://bertelfeed.github.io/AppShelf/assets/ru/promo.webp">
+  <link rel="alternate" hreflang="x-default" href="https://bertelfeed.github.io/AppShelf/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AppShelf">
+  <meta property="og:url" content="https://bertelfeed.github.io/AppShelf/ru/">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:title" content="AppShelf — папки приложений на панели задач и рабочем столе Windows 11">
+  <meta property="og:description" content="Ваши приложения Windows в своём порядке.">
+  <meta property="og:image" content="https://bertelfeed.github.io/AppShelf/assets/ru/share.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Папки AppShelf на панели задач и рабочем столе Windows 11">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="../assets/site.css">
 </head>
 <body>
+  <a class="skip" href="#main">Перейти к содержимому</a>
   <header class="wrap top">
-    <a class="brand" href="./"><img src="../assets/appshelf.svg" alt="">AppShelf</a>
-    <nav>
+    <a class="brand" href="#"><img src="../assets/appshelf.svg" alt="">AppShelf</a>
+    <nav aria-label="Основная навигация">
       <a class="section" href="#features">Возможности</a>
       <a class="section" href="#get">Установка</a>
       <a class="section" href="https://github.com/bertelfeed/AppShelf">GitHub</a>
-      <a class="lang" href="../" data-lang="en" hreflang="en" lang="en">English</a>
+      <a class="lang" href="../?lang=en" data-lang="en" hreflang="en" lang="en">English</a>
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <div class="wrap hero">
-      <h1>Ваши приложения Windows <span>В своём порядке</span></h1>
-      <p class="lead">AppShelf раскладывает приложения по папкам, которые открываются с панели задач или рабочего стола. Меню остаётся маленьким: название, значки приложений и вложенные папки.</p>
+      <h1>Ваши приложения Windows<span class="visually-hidden">. </span> <span class="tagline">В&nbsp;своём порядке</span></h1>
+      <p class="lead">AppShelf раскладывает приложения по&nbsp;папкам, которые открываются с&nbsp;панели задач или рабочего стола. Меню остаётся маленьким: название, значки приложений и&nbsp;вложенные папки.</p>
       <div class="actions">
-        <a class="store-badge" href="https://apps.microsoft.com/detail/9PBGTGLG9RD8"><img src="https://get.microsoft.com/images/ru%20dark.svg" alt="Скачать в Microsoft Store" width="191" height="52"></a>
-        <a class="github-badge" href="https://github.com/bertelfeed/AppShelf/releases/latest"><img src="../assets/github.svg" alt="Скачать с GitHub" width="114" height="26"></a>
+        <a class="badge" href="https://apps.microsoft.com/detail/9PBGTGLG9RD8"><img src="../assets/store-ru.svg" alt="Скачать из Microsoft Store" width="190" height="52"></a>
+        <a class="badge" href="https://github.com/bertelfeed/AppShelf/releases/latest"><img src="../assets/github-ru.svg" alt="Скачать с GitHub" width="118" height="52"></a>
       </div>
-      <p class="note">Windows 11 x64 · Русский и английский · Открытый код под лицензией MIT</p>
+      <p class="note">Windows&nbsp;11 x64 · Русский и&nbsp;английский · Открытый код под лицензией MIT</p>
       <div class="video">
-        <video src="../assets/ru/promo.mp4" poster="../assets/ru/promo.webp" autoplay muted loop playsinline controls preload="metadata" aria-label="Видео об AppShelf"></video>
+        <video src="../assets/ru/promo.mp4" poster="../assets/ru/promo.webp" muted loop playsinline controls preload="none" aria-label="AppShelf в&nbsp;работе: папки открываются с&nbsp;панели задач и&nbsp;рабочего стола, вложенные папки, страницы и&nbsp;параметры папки"></video>
       </div>
     </div>
 
     <section id="features" class="wrap">
       <h2>Папки там, где они нужны</h2>
-      <p class="intro">Всё остальное — в редакторе, аккуратном окне в стиле Windows 11, где вы собираете свои папки.</p>
+      <p class="intro">Всё остальное&nbsp;— в&nbsp;редакторе, аккуратном окне в&nbsp;стиле Windows&nbsp;11, где вы собираете свои папки.</p>
       <div class="features">
         <article class="feature">
           <div class="copy">
-            <h3>Приложения по папкам</h3>
-            <p>Папки с приложениями прямо на рабочем столе. Первый щелчок открывает меню, второй запускает приложение.</p>
+            <h3>Приложения по&nbsp;папкам</h3>
+            <p>Папки с&nbsp;приложениями прямо на&nbsp;рабочем столе. Первый щелчок открывает меню, второй запускает приложение.</p>
           </div>
-          <div class="shot"><img src="../assets/ru/desktop.webp" alt="Папка «Работа», открытая на рабочем столе Windows 11" width="1078" height="934" loading="lazy"></div>
+          <div class="shot"><img src="../assets/ru/desktop.webp" alt="Папка «Работа», открытая на рабочем столе Windows 11" width="734" height="734" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
-            <h3>Папки на панели задач</h3>
-            <p>У каждой папки своя кнопка рядом с другими приложениями, с превью содержимого и кнопками быстрого запуска.</p>
+            <h3>Папки на&nbsp;панели задач</h3>
+            <p>У&nbsp;каждой папки своя кнопка рядом с&nbsp;другими приложениями, с&nbsp;превью содержимого и&nbsp;кнопками быстрого запуска.</p>
           </div>
-          <div class="shot"><img src="../assets/ru/taskbar.webp" alt="Меню папки над панелью задач Windows 11" width="900" height="780" loading="lazy"></div>
+          <div class="shot"><img src="../assets/ru/taskbar.webp" alt="Меню папки над панелью задач Windows 11" width="640" height="560" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
             <h3>Папки внутри папок</h3>
-            <p>Держите инструменты вместе. Назад ведут название папки, Backspace и Alt+←.</p>
+            <p>Держите инструменты вместе. Назад ведут название папки, Backspace и&nbsp;Alt+←.</p>
           </div>
-          <div class="shot"><img src="../assets/ru/nested.webp" alt="Папка «Разработка» внутри папки «Работа»" width="900" height="780" loading="lazy"></div>
+          <div class="shot"><img src="../assets/ru/nested.webp" alt="Папка «Разработка» внутри папки «Работа»" width="640" height="560" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
             <h3>Много приложений? Листайте</h3>
-            <p>Задайте число строк и столбцов. Если приложений больше, листайте страницы колесом мыши, стрелками или точками сбоку, как в меню «Пуск».</p>
+            <p>Задайте число строк и&nbsp;столбцов. Если приложений больше, листайте страницы колесом мыши, клавишами Page&nbsp;Up и&nbsp;Page&nbsp;Down или точками сбоку, как в&nbsp;меню «Пуск».</p>
           </div>
-          <div class="shot"><img src="../assets/ru/pages.webp" alt="Папка «Игры» с точками страниц" width="900" height="780" loading="lazy"></div>
+          <div class="shot"><img src="../assets/ru/pages.webp" alt="Папка «Игры» с точками страниц" width="640" height="560" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
-            <h3>Каждая папка — по-своему</h3>
-            <p>Значки её приложений, символ или своя картинка любого цвета и прозрачности. Светлое или тёмное меню и размер значков от 50 до 200 % — отдельно для рабочего стола и панели задач.</p>
+            <h3>Каждая папка&nbsp;— по-своему</h3>
+            <p>Значки её приложений, символ или своя картинка на&nbsp;подложке любого цвета и&nbsp;прозрачности. Светлое или тёмное меню и&nbsp;размер значков от&nbsp;50 до&nbsp;200&nbsp;%&nbsp;— отдельно для рабочего стола и&nbsp;панели задач.</p>
           </div>
           <div class="shot"><img src="../assets/ru/style.webp" alt="Параметры папки: раскладка, значок и цвет" width="1082" height="977" loading="lazy"></div>
         </article>
         <article class="feature">
           <div class="copy">
-            <h3>Всё в одном месте</h3>
-            <p>Перетаскивайте приложения, сортируйте их и вкладывайте папки друг в друга в редакторе, который выглядит как часть Windows 11.</p>
+            <h3>Всё в&nbsp;одном месте</h3>
+            <p>Перетаскивайте приложения, сортируйте их и&nbsp;вкладывайте папки друг в&nbsp;друга в&nbsp;редакторе, который выглядит как часть Windows&nbsp;11.</p>
           </div>
-          <div class="shot"><img src="../assets/ru/editor.webp" alt="Редактор AppShelf с папкой «Работа»" width="900" height="780" loading="lazy"></div>
+          <div class="shot"><img src="../assets/ru/editor.webp" alt="Редактор AppShelf с папкой «Работа»" width="946" height="833" loading="lazy"></div>
         </article>
       </div>
     </section>
@@ -92,50 +104,50 @@
       <h2>Что нужно знать</h2>
       <div class="cards">
         <div class="card">
-          <h3><span class="dot" style="background:var(--accent)"></span>Работает в области уведомлений</h3>
-          <p>Кнопки на панели задач и папки на рабочем столе работают, пока AppShelf запущен. Запуск вместе с Windows включается одним переключателем в параметрах.</p>
+          <h3><span class="dot" style="background:var(--accent)"></span>Работает в&nbsp;области уведомлений</h3>
+          <p>Кнопки на&nbsp;панели задач и&nbsp;открытие папок на&nbsp;рабочем столе одним щелчком работают, пока AppShelf запущен. Запуск вместе с&nbsp;Windows включается одним переключателем в&nbsp;параметрах.</p>
         </div>
         <div class="card">
-          <h3><span class="dot" style="background:var(--teal)"></span>Меню «Пуск» не трогает</h3>
-          <p>Это собственные кнопки AppShelf, а не закрепления Проводника. Меню «Пуск» остаётся как было.</p>
+          <h3><span class="dot" style="background:var(--teal)"></span>Меню «Пуск» не&nbsp;трогает</h3>
+          <p>Это собственные кнопки AppShelf, а&nbsp;не&nbsp;закрепления Проводника. Меню «Пуск» остаётся как было.</p>
         </div>
         <div class="card">
-          <h3><span class="dot" style="background:var(--orange)"></span>Ярлыки не ломаются</h3>
-          <p>AppShelf хранит копии добавленных ярлыков: уборка рабочего стола не ломает папки, а приложения, переехавшие после обновления, находятся заново.</p>
+          <h3><span class="dot" style="background:var(--orange)"></span>Ярлыки не&nbsp;ломаются</h3>
+          <p>AppShelf хранит копии добавленных ярлыков: уборка рабочего стола не&nbsp;ломает папки, а&nbsp;приложения, переехавшие после обновления, находятся заново.</p>
         </div>
         <div class="card">
-          <h3><span class="dot" style="background:#ffd23f"></span>Ваши папки остаются у вас</h3>
-          <p>Ни аккаунтов, ни аналитики, ни рекламы. Всё хранится на вашем компьютере.</p>
+          <h3><span class="dot" style="background:var(--yellow)"></span>Ваши папки остаются у&nbsp;вас</h3>
+          <p>Ни&nbsp;аккаунтов, ни&nbsp;аналитики, ни&nbsp;рекламы. Всё хранится на&nbsp;вашем компьютере.</p>
           <a class="more" href="https://github.com/bertelfeed/AppShelf/blob/main/PRIVACY.md#политика-конфиденциальности-appshelf">Политика конфиденциальности</a>
         </div>
         <div class="card">
-          <h3><span class="dot" style="background:#f25f8a"></span>ИИ — по желанию</h3>
-          <p>Claude или другой MCP-клиент разложит приложения по папкам, и любое изменение можно отменить. Чат-бота внутри AppShelf нет.</p>
-          <a class="more" href="https://github.com/bertelfeed/AppShelf/blob/main/MCP.md">Подключение MCP</a>
+          <h3><span class="dot" style="background:var(--pink)"></span>ИИ&nbsp;— по&nbsp;желанию</h3>
+          <p>Claude или другой MCP-клиент разложит приложения по&nbsp;папкам, и&nbsp;любое изменение можно отменить. Чат-бота внутри AppShelf нет.</p>
+          <a class="more" href="https://github.com/bertelfeed/AppShelf/blob/main/MCP.md">Подключение MCP (на&nbsp;английском)</a>
         </div>
         <div class="card">
           <h3><span class="dot" style="background:var(--accent-strong)"></span>Обновления</h3>
-          <p>AppShelf сообщает, когда выходит новая версия. Версия из Microsoft Store обновляется через Store.</p>
+          <p>AppShelf сообщает, когда выходит новая версия. Версия из&nbsp;Microsoft&nbsp;Store обновляется через Store.</p>
         </div>
       </div>
     </section>
 
     <section id="get" class="wrap">
       <h2>Установка</h2>
-      <p class="intro">Нужна Windows 11 x64.</p>
+      <p class="intro">Нужна Windows&nbsp;11 x64.</p>
       <div class="get">
         <div class="card">
           <h3>Microsoft Store</h3>
-          <p>Ставится в один щелчок и обновляется сам. Покупка поддерживает разработку.</p>
+          <p>Ставится в&nbsp;один щелчок и&nbsp;обновляется сам. Покупка поддерживает разработку.</p>
           <div class="actions">
-            <a class="store-badge" href="https://apps.microsoft.com/detail/9PBGTGLG9RD8"><img src="https://get.microsoft.com/images/ru%20dark.svg" alt="Скачать в Microsoft Store" width="191" height="52" loading="lazy"></a>
+            <a class="badge" href="https://apps.microsoft.com/detail/9PBGTGLG9RD8"><img src="../assets/store-ru.svg" alt="Скачать из Microsoft Store" width="190" height="52" loading="lazy"></a>
           </div>
         </div>
         <div class="card">
           <h3>GitHub</h3>
-          <p>Бесплатно и без установки: распакуйте папку и запустите AppShelf.exe. .NET уже внутри, ставить больше ничего не нужно.</p>
+          <p>Бесплатно и&nbsp;без установки: распакуйте ZIP-архив и&nbsp;запустите AppShelf.exe. Внутри уже есть .NET, ставить больше ничего не&nbsp;нужно. Версия 0.6.1&nbsp;— предварительная.</p>
           <div class="actions">
-            <a class="github-badge" href="https://github.com/bertelfeed/AppShelf/releases/latest"><img src="../assets/github.svg" alt="Скачать с GitHub" width="114" height="26"></a>
+            <a class="badge" href="https://github.com/bertelfeed/AppShelf/releases/latest"><img src="../assets/github-ru.svg" alt="Скачать с GitHub" width="118" height="52" loading="lazy"></a>
           </div>
         </div>
       </div>
@@ -145,11 +157,11 @@
   <footer>
     <div class="wrap">
       <span>© 2026 bertelfeed · Лицензия MIT</span>
-      <nav>
+      <nav aria-label="Ссылки проекта">
         <a href="https://github.com/bertelfeed/AppShelf">GitHub</a>
-        <a href="https://github.com/bertelfeed/AppShelf/issues/new/choose">Сообщить об ошибке</a>
+        <a href="https://github.com/bertelfeed/AppShelf/issues/new/choose">Сообщить об&nbsp;ошибке</a>
         <a href="https://github.com/bertelfeed/AppShelf/blob/main/PRIVACY.md#политика-конфиденциальности-appshelf">Конфиденциальность</a>
-        <a href="https://boosty.to/bertelfeed/donate">Поддержать на Boosty</a>
+        <a href="https://boosty.to/bertelfeed/donate">Поддержать на&nbsp;Boosty</a>
       </nav>
     </div>
   </footer>
