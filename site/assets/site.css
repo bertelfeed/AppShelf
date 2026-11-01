@@ -54,10 +54,13 @@ img, video { display: block; max-width: 100%; }
 /* Hero */
 .hero { text-align: center; padding: 56px 0 40px; }
 .hero h1 { font: 650 clamp(36px, 6vw, 64px)/1.08 var(--display); letter-spacing: -0.02em; margin: 0 auto 20px; max-width: 14em; }
-.hero h1 span { display: block; background: linear-gradient(90deg, var(--accent-strong), var(--teal)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero h1 span { display: block; padding-bottom: 0.1em; background: linear-gradient(90deg, var(--accent-strong), var(--teal)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .hero .lead { color: var(--muted); font-size: clamp(17px, 2.2vw, 20px); max-width: 36em; margin: 0 auto 32px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; }
 .store-badge img { height: 52px; width: auto; }
+.github-badge { display: inline-flex; align-items: center; height: 52px; padding: 0 20px; border-radius: 6px;
+  background: #202020; border: 1px solid #5c5c5c; }
+.github-badge img { height: 26px; width: auto; }
 .button { display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 22px; border-radius: 10px;
   background: var(--surface); border: 1px solid var(--line); color: var(--text); font-weight: 600; }
 .button:hover { background: var(--surface-hover); text-decoration: none; }
