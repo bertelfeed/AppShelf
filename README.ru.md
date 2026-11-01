@@ -12,11 +12,7 @@
 </p>
 <p align="center"><a href="README.md">English</a> · <a href="MCP.md">Подключение MCP</a> · <a href="CONTRIBUTING.md">Сборка и участие</a></p>
 
-<!-- Промо-ролик: загрузите artifacts/store-media/ru-RU/promo/promo-1920x1080.mp4 в редакторе README на GitHub и вставьте полученную ссылку в эту строку. -->
-
 https://github.com/user-attachments/assets/f4175c13-16dc-4ee1-8b7c-5a06014b4fa8
-
-
 
 Раскладывайте приложения по папкам, которые открываются с **панели задач или рабочего стола**.
 Меню остаётся маленьким: название, значки приложений и вложенные папки. Всё остальное — в

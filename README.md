@@ -12,11 +12,7 @@
 </p>
 <p align="center"><a href="README.ru.md">Русский</a> · <a href="MCP.md">MCP setup</a> · <a href="CONTRIBUTING.md">Build & contribute</a></p>
 
-<!-- Promo video: upload artifacts/store-media/en-US/promo/promo-1920x1080.mp4 in GitHub's README editor and put the link it gives on this line. -->
-
 https://github.com/user-attachments/assets/0296c093-1db0-49cc-9b3c-024e50979659
-
-
 
 Put your apps into folders that open from the **taskbar or the desktop**. The menu stays small:
 a title, your app icons and nested folders. Everything else lives in the editor.

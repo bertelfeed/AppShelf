@@ -59,7 +59,13 @@ try {
         $runtimeRoot = Join-Path $env:NUGET_PACKAGES "microsoft.netcore.app.runtime.win-x64\$RuntimeVersion"
         Copy-Item -LiteralPath (Join-Path $runtimeRoot 'LICENSE.TXT') -Destination (Join-Path $licenses 'NET-LICENSE.txt') -Force
         Copy-Item -LiteralPath (Join-Path $runtimeRoot 'THIRD-PARTY-NOTICES.TXT') -Destination (Join-Path $licenses 'NET-THIRD-PARTY-NOTICES.txt') -Force
-        Copy-Item -LiteralPath (Join-Path $env:NUGET_PACKAGES "microsoft.netcore.app.host.win-x64\$RuntimeVersion\THIRD-PARTY-NOTICES.TXT") -Destination (Join-Path $licenses 'NET-HOST-THIRD-PARTY-NOTICES.txt') -Force
+        # The app host comes from the SDK's packs folder when the SDK has this runtime version, and that pack has no
+        # notices; its NuGet package carries the runtime's notices above. A separate copy is kept only if they differ.
+        $hostNotices = Join-Path $env:NUGET_PACKAGES "microsoft.netcore.app.host.win-x64\$RuntimeVersion\THIRD-PARTY-NOTICES.TXT"
+        if ((Test-Path -LiteralPath $hostNotices) -and
+            (Get-FileHash -LiteralPath $hostNotices).Hash -ne (Get-FileHash -LiteralPath (Join-Path $runtimeRoot 'THIRD-PARTY-NOTICES.TXT')).Hash) {
+            Copy-Item -LiteralPath $hostNotices -Destination (Join-Path $licenses 'NET-HOST-THIRD-PARTY-NOTICES.txt') -Force
+        }
         Copy-Item -LiteralPath (Join-Path $env:NUGET_PACKAGES "microsoft.windowsdesktop.app.runtime.win-x64\$RuntimeVersion\LICENSE") -Destination (Join-Path $licenses 'WPF-LICENSE.txt') -Force
         # A portable copy keeps its profile beside the program and ships its notes; the Store version has neither.
         function Add-PortableFiles([string]$target) {
