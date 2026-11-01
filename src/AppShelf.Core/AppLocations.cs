@@ -9,7 +9,6 @@ namespace AppShelf.Core;
 public static class AppLocations
 {
     public const string AppAlias = "appshelf.exe";
-    public const string McpAlias = "appshelf-mcp.exe";
 
     /// <summary>Package family name when running from the MSIX package; null otherwise.</summary>
     public static string? PackageFamilyName { get; } = ReadPackageFamilyName();

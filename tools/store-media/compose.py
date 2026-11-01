@@ -273,11 +273,15 @@ def art_poster(text, w=1440, h=2160):
     return canvas
 
 
-def art_hero(capture, text):
-    """16:9 hero image, also the trailer thumbnail: name and tagline beside the taskbar menu."""
+def art_hero(capture, text, titled=True):
+    """16:9 hero image: the trailer thumbnail has the name and tagline beside the taskbar menu.
+    Untitled, it is the Super hero art, which the Store requires without the product's title."""
     image, crop = scene_image(capture, text, "taskbar")
     card = image.crop(tuple(frame([crop[0], crop[1], crop[2], crop[3]], (900, 760), capture.screen, bottom=True)))
     canvas = background(W, H, seed=5)
+    if not titled:
+        paste_card(canvas, card, ((W - card.width) // 2, (H - card.height) // 2))
+        return canvas
     paste_card(canvas, card, (W - card.width - 110, (H - card.height) // 2))
     mark = logo(150)
     canvas.paste(mark, (110, 300), mark)
@@ -304,6 +308,7 @@ def main(language):
     art_box().save(os.path.join(art_dir, "box-art-1x1-2160.png"), optimize=True)
     art_poster(text).save(os.path.join(art_dir, "poster-art-2x3-1440x2160.png"), optimize=True)
     art_hero(capture, text).save(os.path.join(art_dir, "hero-16x9-1920x1080.png"), optimize=True)
+    art_hero(capture, text, titled=False).save(os.path.join(art_dir, "super-hero-16x9-1920x1080.png"), optimize=True)
     print(art_dir)
 
 

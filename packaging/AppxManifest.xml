@@ -31,7 +31,9 @@
           Square310x310Logo="Assets\Square310x310Logo.png" />
       </uap:VisualElements>
       <Extensions>
-        <!-- Folder shortcuts start the app through this alias: its path survives updates, the package folder does not. -->
+        <!-- Folder shortcuts start the app through this alias: its path survives updates, the package folder does not.
+             MCP clients start the server through it too, with the mcp switch (see MCP.md). The Store rejects applications hidden from Start
+             (AppListEntry="none"), and an application has only one alias, so the server has no alias of its own. -->
         <uap3:Extension Category="windows.appExecutionAlias" Executable="AppShelf.exe" EntryPoint="Windows.FullTrustApplication">
           <uap3:AppExecutionAlias>
             <desktop:ExecutionAlias Alias="appshelf.exe" />
@@ -41,18 +43,6 @@
         <desktop:Extension Category="windows.startupTask" Executable="AppShelf.exe" EntryPoint="Windows.FullTrustApplication">
           <desktop:StartupTask TaskId="AppShelfStartup" Enabled="false" DisplayName="AppShelf" />
         </desktop:Extension>
-      </Extensions>
-    </Application>
-    <!-- The MCP server for Claude and other clients: no Start entry, started as appshelf-mcp.exe. -->
-    <Application Id="Mcp" Executable="AppShelf.Mcp.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="AppShelf MCP" Description="Local MCP server of AppShelf" AppListEntry="none"
-        BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" />
-      <Extensions>
-        <uap3:Extension Category="windows.appExecutionAlias" Executable="AppShelf.Mcp.exe" EntryPoint="Windows.FullTrustApplication">
-          <uap3:AppExecutionAlias>
-            <desktop:ExecutionAlias Alias="appshelf-mcp.exe" />
-          </uap3:AppExecutionAlias>
-        </uap3:Extension>
       </Extensions>
     </Application>
   </Applications>

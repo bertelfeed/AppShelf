@@ -1,9 +1,9 @@
 <Project>
   <!-- Public Partner Center product identity. Never put client secrets in this file. -->
   <PropertyGroup>
-    <StoreProductId Condition="'$(StoreProductId)' == ''"></StoreProductId>
-    <StoreIdentityName></StoreIdentityName>
-    <StorePublisher></StorePublisher>
-    <StorePublisherDisplayName>bertelfeed</StorePublisherDisplayName>
+    <StoreProductId Condition="'$(StoreProductId)' == ''">9PBGTGLG9RD8</StoreProductId>
+    <StoreIdentityName>bertel.AppShelf</StoreIdentityName>
+    <StorePublisher>CN=F8DAB477-A613-4651-9F5D-5C48F1C385E8</StorePublisher>
+    <StorePublisherDisplayName>b_e_r_t_e_l</StorePublisherDisplayName>
   </PropertyGroup>
 </Project>

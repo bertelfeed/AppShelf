@@ -13,7 +13,8 @@ Output goes to `artifacts/store-media/<language>/`:
 | `screenshots/01-…06-*.png` (1920×1080) | Screenshots (desktop) |
 | `art/box-art-1x1-2160.png` | 1:1 Box art |
 | `art/poster-art-2x3-1440x2160.png` | 2:3 Poster art |
-| `art/hero-16x9-1920x1080.png` | 16:9 Super hero art, trailer thumbnail |
+| `art/hero-16x9-1920x1080.png` | Trailer thumbnail, with the name and tagline |
+| `art/super-hero-16x9-1920x1080.png` | 16:9 Super hero art, without the title as the Store requires |
 | `promo/promo-1920x1080.mp4` | Trailer: the only video uploaded |
 | `trailer-1920x1080.mp4` | Not uploaded: a calmer 43-second tour, kept for a website or GitHub |
 

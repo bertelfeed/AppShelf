@@ -42,13 +42,18 @@ try {
     $settings = Get-AppShelfStoreSettings -ProjectRoot $testRoot -RequireProduction
     Reject-StoreCheck { Get-AppShelfStoreSettings -ProjectRoot $testRoot -RequireProduction -Overrides @{ IdentityName = 'AppShelf.Dev' } } 'A development package was accepted for production.'
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    function New-StoreFixture([string]$Path, [switch]$PrivateFile) {
+    function New-StoreFixture([string]$Path, [switch]$PrivateFile, [switch]$Headless) {
         $archive = [IO.Compression.ZipFile]::Open($Path, [IO.Compression.ZipArchiveMode]::Create)
         try {
             foreach ($entry in @('AppxManifest.xml', 'AppShelf.exe', 'AppShelf.Mcp.exe', 'resources.pri', 'ru/AppShelf.Core.resources.dll', 'LICENSE', 'licenses/NET-LICENSE.txt')) {
                 $writer = [IO.StreamWriter]::new($archive.CreateEntry($entry).Open())
                 try {
-                    if ($entry -eq 'AppxManifest.xml') { $writer.Write('<Package><Identity Name="AppShelf.Tests" Publisher="CN=Tests" Version="' + $version + '.0" ProcessorArchitecture="x64" /></Package>') }
+                    if ($entry -eq 'AppxManifest.xml') {
+                        $hidden = if ($Headless) { '<Application Id="Hidden"><uap:VisualElements AppListEntry="none" /></Application>' } else { '' }
+                        $writer.Write('<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10">' +
+                            '<Identity Name="AppShelf.Tests" Publisher="CN=Tests" Version="' + $version + '.0" ProcessorArchitecture="x64" /><Applications>' +
+                            '<Application Id="App"><uap:VisualElements /><Extensions><desktop:ExecutionAlias Alias="appshelf.exe" /></Extensions></Application>' + $hidden + '</Applications></Package>')
+                    }
                     else { $writer.Write('test fixture') }
                 } finally { $writer.Dispose() }
             }
@@ -64,7 +69,10 @@ try {
     $private = Join-Path $testRoot 'private-fixture.msix'
     New-StoreFixture $private -PrivateFile
     Reject-StoreCheck { Test-AppShelfStorePackage -Path $private -Settings $settings -Version $version } 'A package containing a profile was accepted.'
-    Write-Output 'PASS MSIX identity, version, layout and checksum validation'
+    $headless = Join-Path $testRoot 'headless-fixture.msix'
+    New-StoreFixture $headless -Headless
+    Reject-StoreCheck { Test-AppShelfStorePackage -Path $headless -Settings $settings -Version $version } 'A package with an application hidden from Start was accepted.'
+    Write-Output 'PASS MSIX identity, version, layout, Start entries and checksum validation'
 
     & (Join-Path $PSScriptRoot 'submit-store-release.ps1') -Tag "v$version" -PackagePath $package -DryRun | Out-Null
     Assert-StoreCheck ($global:AppShelfStoreTestCalls.Count -eq 0) 'Dry run contacted the CLI.'

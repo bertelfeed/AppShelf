@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/languages-EN%20%C2%B7%20RU-2EA44F" alt="English and Russian">
   <img src="https://img.shields.io/badge/MCP-optional-6E56CF" alt="Optional MCP server">
 </p>
-<p align="center"><a href="README.ru.md">Русский</a> · <a href="MCP.md">MCP setup</a> · <a href="CONTRIBUTING.md">Build & contribute</a></p>
+<p align="center"><a href="README.ru.md">Русский</a> · <a href="MCP.md">MCP setup</a> · <a href="CONTRIBUTING.md">Build & contribute</a> · <a href="PRIVACY.md">Privacy</a></p>
 
 https://github.com/user-attachments/assets/0296c093-1db0-49cc-9b3c-024e50979659
 

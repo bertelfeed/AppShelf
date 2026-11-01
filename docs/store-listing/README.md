@@ -18,7 +18,8 @@ Limits, from [Add and edit Store listing info for MSIX app](https://learn.micros
 | --- | --- |
 | Screenshots | `screenshots/01-desktop.png` … `06-editor.png`, in that order |
 | Trailer | `promo/promo-1920x1080.mp4` (the only video uploaded) |
-| Trailer thumbnail, 16:9 Super hero art | `art/hero-16x9-1920x1080.png` |
+| Trailer thumbnail | `art/hero-16x9-1920x1080.png` (with the name) |
+| 16:9 Super hero art | `art/super-hero-16x9-1920x1080.png` (the Store forbids the title here) |
 | 2:3 Poster art | `art/poster-art-2x3-1440x2160.png` |
 | 1:1 Box art | `art/box-art-1x1-2160.png` |
 
@@ -31,5 +32,6 @@ These live in other parts of the submission (Properties, Pricing and availabilit
 | Category | Productivity first; Utilities & tools or Personalization second |
 | Website | `https://github.com/bertelfeed/AppShelf` |
 | Support contact | `https://github.com/bertelfeed/AppShelf/issues/new/choose` |
-| Privacy policy | AppShelf collects no data. The Store version only asks Microsoft Store about updates; the GitHub version asks GitHub for its latest release once a day (Settings can turn this off). If Partner Center asks for a URL, a short `PRIVACY.md` in the repository is enough (not written yet). |
+| Privacy policy | Required because of `runFullTrust`. The English part of [`PRIVACY.md`](../../PRIVACY.md) is pasted as text, adapted to the Store version, and links back to that file. |
+| Restricted capability | `runFullTrust`, explained in Submission options (500 characters at most). |
 | Copyright | © 2026 bertelfeed. MIT License. |

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using Microsoft.Win32;
 
@@ -23,6 +24,8 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        // The Store package has a single application and alias, so MCP clients start the server as "appshelf.exe --mcp".
+        if (e.Args.FirstOrDefault() == "--mcp") { Shutdown(await RunMcpServerAsync(e.Args[1..])); return; }
         DispatcherUnhandledException += (_, args) =>
         {
             Report(args.Exception);
@@ -90,6 +93,41 @@ public partial class App : Application
         try { ProfileCopy.Copy(source, directory); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
         { MessageBox.Show(ex.Message, L.Get("CouldNotImportProfile"), MessageBoxButton.OK, MessageBoxImage.Warning); }
+    }
+
+    /// <summary>
+    /// Runs AppShelf.Mcp.exe from this folder on this process's stdio. Process.Start cannot pass a GUI process's own
+    /// stdio to a console child, so the streams are relayed; each chunk is flushed at once, since MCP messages are single lines.
+    /// </summary>
+    private static async Task<int> RunMcpServerAsync(string[] arguments)
+    {
+        var start = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "AppShelf.Mcp.exe"))
+        { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var argument in arguments) start.ArgumentList.Add(argument);
+        Process server;
+        try { server = Process.Start(start)!; }
+        catch (System.ComponentModel.Win32Exception) { return 1; }
+        using (server)
+        {
+            // The client closing its end ends the server's input, and the server then exits on its own.
+            _ = Relay(Console.OpenStandardInput(), server.StandardInput.BaseStream);
+            await Task.WhenAll(Relay(server.StandardOutput.BaseStream, Console.OpenStandardOutput()),
+                Relay(server.StandardError.BaseStream, Console.OpenStandardError()));
+            await server.WaitForExitAsync();
+            return server.ExitCode;
+        }
+
+        static async Task Relay(Stream from, Stream to)
+        {
+            var buffer = new byte[16384];
+            try
+            {
+                int read;
+                while ((read = await from.ReadAsync(buffer)) > 0) { await to.WriteAsync(buffer.AsMemory(0, read)); await to.FlushAsync(); }
+            }
+            catch (IOException) { }
+            finally { to.Dispose(); from.Dispose(); }
+        }
     }
 
     private static string? Argument(string[] args, string key)

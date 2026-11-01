@@ -24,8 +24,10 @@ location with the actual directory where you extracted AppShelf:
 }
 ```
 
-With the Microsoft Store version, use `"command": "appshelf-mcp.exe"`. This
-app execution alias keeps working after Store updates.
+With the Microsoft Store version, use `"command": "appshelf.exe"` with
+`"args": ["--mcp"]`. This app execution alias keeps working after Store updates;
+`appshelf.exe --mcp` runs the same server on its stdio. The portable copy accepts
+`AppShelf.exe --mcp` too.
 
 Merge this entry with existing servers; do not replace an existing configuration.
 Restart the client after changing its configuration.

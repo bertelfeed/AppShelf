@@ -22,6 +22,10 @@ function Test-AppShelfStorePackage {
         if ($identity.Name -cne $Settings.IdentityName -or $identity.Publisher -cne $Settings.Publisher -or $identity.Version -cne ($Version + '.0') -or $identity.ProcessorArchitecture -ne 'x64') {
             throw 'MSIX identity or version does not match this release configuration.'
         }
+        # Partner Center rejects headless apps: every application must have a Start entry.
+        if ($manifest.SelectNodes('//@AppListEntry') | Where-Object { $_.Value -eq 'none' }) { throw 'The MSIX declares an application hidden from Start.' }
+        $aliases = @($manifest.GetElementsByTagName('ExecutionAlias', 'http://schemas.microsoft.com/appx/manifest/desktop/windows10') | ForEach-Object { $_.Alias })
+        if ($aliases -notcontains 'appshelf.exe') { throw 'The MSIX is missing the appshelf.exe alias.' }
     }
     finally { $archive.Dispose() }
 }
