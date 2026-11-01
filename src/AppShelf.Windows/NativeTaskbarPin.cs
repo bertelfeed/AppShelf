@@ -33,7 +33,8 @@ public sealed class NativeTaskbarPin : IDisposable
             if (RoGetActivationFactory(name, ref iid, out factory) < 0) return;
             var support = new Guid("CDFEFD63-E879-4134-B9A7-8283F05F9480");
             if (Marshal.QueryInterface(factory, in support, out marker) < 0) return;
-            Marshal.ThrowExceptionForHR(Method<GetObject>(factory, 6)(factory, out manager));
+            // Denied where there is no interactive shell (a service or a hosted CI runner): pinning is then unsupported.
+            if (Method<GetObject>(factory, 6)(factory, out manager) < 0) manager = IntPtr.Zero;
         }
         finally
         {

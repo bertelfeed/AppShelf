@@ -124,18 +124,13 @@ internal static class Program
             var folder = ShelfItem.Folder("Папка с пробелами");
             var path = ShellIntegration.CreateFolderShortcut(folder, root, root);
             Expect(File.Exists(path));
-            dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
-            dynamic link = shell.CreateShortcut(path);
-            Expect(((string)link.Arguments).Contains(folder.Id.ToString("D")));
-            Expect(((string)link.TargetPath).Equals(Environment.ProcessPath, StringComparison.OrdinalIgnoreCase));
-            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(link);
-            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
-            dynamic explorer = Activator.CreateInstance(Type.GetTypeFromProgID("Shell.Application")!)!;
-            dynamic directory = explorer.NameSpace(root);
-            dynamic item = directory.ParseName(Path.GetFileName(path));
-            string appId = item.ExtendedProperty("System.AppUserModel.ID");
-            Expect(appId == ShellIntegration.FolderAppId(folder.Id), appId);
-            foreach (object obj in new object[] { item, directory, explorer }) System.Runtime.InteropServices.Marshal.FinalReleaseComObject(obj);
+            // Read back through the shell link and its property store, as the taskbar does. Script hosts and Explorer's
+            // namespace are not available on every machine (hosted CI runners have no Explorer session).
+            var link = ShellIntegration.ReadShortcut(path);
+            Expect(link is not null, "The shortcut cannot be read: " + path);
+            Expect(link!.Arguments.Contains(folder.Id.ToString("D")), "Arguments: " + link.Arguments);
+            Expect(link.Target.Equals(Environment.ProcessPath, StringComparison.OrdinalIgnoreCase), "Target: " + link.Target);
+            Expect(link.AppId == ShellIntegration.FolderAppId(folder.Id), "AppUserModelID: " + link.AppId);
         });
         Check("Shell icon extraction returns a frozen image", () =>
         {
